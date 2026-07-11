@@ -39,6 +39,13 @@ src/main/store/repositories.ts  # 등록된 저장소 목록 JSON 영속화
 - 위 모듈이 전부 테스트와 함께 구현되고 quality gate를 통과한다.
 - 렌더러에서 `window.diffScope`로 저장소 등록 → status/worktree/log/diff 조회가 타입 안전하게 가능하다 (UI는 Phase 3).
 
+## 구현 결과 (2026-07-11 완료)
+
+- 계획한 모듈 구성 그대로 구현했다. 테스트 34건(신규 32건) 통과, quality gate 전 항목 확인.
+- fixture는 이 저장소에서 실제 git 출력(status/worktree/log)을 덤프해 형식을 대조했다.
+- `registerIpcHandlers`가 `RepositoryStore`를 주입받는 구조로 바뀌었고, `src/main/index.ts`가 `userData/repositories.json` 경로로 스토어를 생성한다.
+- 저장소 등록 시 IPC 핸들러가 `resolveRepositoryRoot`로 루트를 해석한 뒤 스토어에 넣는다. 깨진 스토어 파일은 빈 목록으로 취급한다.
+
 ## 열린 질문
 
 - diff 원문이 매우 클 때(수만 라인)의 IPC 전송 한계 — Phase 3에서 렌더링 성능과 함께 검토

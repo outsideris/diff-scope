@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { IpcChannels } from "../shared/ipc";
+import type { DiffScopeApi } from "./index";
 
 const { exposeInMainWorld, invoke } = vi.hoisted(() => ({
   exposeInMainWorld: vi.fn(),
@@ -11,16 +12,43 @@ vi.mock("electron", () => ({
   ipcRenderer: { invoke },
 }));
 
+async function loadApi(): Promise<DiffScopeApi> {
+  await import("./index");
+  expect(exposeInMainWorld).toHaveBeenCalledTimes(1);
+  const [name, api] = exposeInMainWorld.mock.calls[0] as [string, DiffScopeApi];
+  expect(name).toBe("diffScope");
+  return api;
+}
+
 describe("preload api", () => {
-  it("exposes a diffScope api whose ping invokes the ping channel", async () => {
-    await import("./index");
+  it("maps every api method to its IPC channel with its arguments", async () => {
+    const api = await loadApi();
 
-    expect(exposeInMainWorld).toHaveBeenCalledTimes(1);
-    const [name, api] = exposeInMainWorld.mock.calls[0] as [string, { ping(): Promise<string> }];
-    expect(name).toBe("diffScope");
+    const cases: Array<[() => Promise<unknown>, unknown[]]> = [
+      [() => api.ping(), [IpcChannels.ping]],
+      [() => api.listRepositories(), [IpcChannels.listRepositories]],
+      [() => api.addRepository("/repos/a"), [IpcChannels.addRepository, "/repos/a"]],
+      [() => api.removeRepository("/repos/a"), [IpcChannels.removeRepository, "/repos/a"]],
+      [() => api.listWorktrees("/repos/a"), [IpcChannels.listWorktrees, "/repos/a"]],
+      [() => api.getStatus("/repos/a"), [IpcChannels.getStatus, "/repos/a"]],
+      [() => api.getLog("/repos/a", { limit: 5 }), [IpcChannels.getLog, "/repos/a", { limit: 5 }]],
+      [
+        () => api.getWorkingDiff("/repos/a", { staged: true }),
+        [IpcChannels.getWorkingDiff, "/repos/a", { staged: true }],
+      ],
+      [
+        () => api.getCommitDiff("/repos/a", "abc123"),
+        [IpcChannels.getCommitDiff, "/repos/a", "abc123"],
+      ],
+    ];
 
-    invoke.mockResolvedValue("pong");
-    await expect(api.ping()).resolves.toBe("pong");
-    expect(invoke).toHaveBeenCalledWith(IpcChannels.ping);
+    expect(Object.keys(cases)).toHaveLength(Object.keys(IpcChannels).length);
+
+    for (const [call, expectedArgs] of cases) {
+      invoke.mockClear();
+      invoke.mockResolvedValueOnce("RESULT");
+      await expect(call()).resolves.toBe("RESULT");
+      expect(invoke).toHaveBeenCalledWith(...expectedArgs);
+    }
   });
 });

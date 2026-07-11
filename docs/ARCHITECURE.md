@@ -32,6 +32,24 @@ Electron 앱. 아직 스캐폴딩 전이며, 아래는 결정된 구조 방향�
 | Git 접근    | git CLI 실행 (`child_process`) + 출력 파싱 |
 | 린트/포맷   | oxlint + oxfmt                             |
 
+## 모듈 구성
+
+```
+src/shared/ipc.ts            # IPC 채널 상수 (main/preload 공유)
+src/shared/git.ts            # 렌더러와 공유하는 타입 (RepoStatus, Worktree, CommitInfo, ...)
+src/main/index.ts            # 앱 생명주기, 창 생성, 스토어/IPC 초기화
+src/main/ipc.ts              # IPC 핸들러 등록 (RepositoryStore 주입)
+src/main/git/exec.ts         # git CLI 실행 래퍼 (runGit) + GitError
+src/main/git/status.ts       # status --porcelain=v2 -z 파서
+src/main/git/worktree.ts     # worktree list --porcelain -z 파서
+src/main/git/log.ts          # log 커스텀 구분자 포맷 파서
+src/main/git/diff.ts         # working/staged/untracked/commit diff 원문 조회
+src/main/git/repository.ts   # 경로 → 저장소 루트 해석
+src/main/store/repositories.ts  # 저장소 목록 JSON 영속화 (userData/repositories.json)
+src/preload/index.ts         # window.diffScope typed API
+src/renderer/                # React UI
+```
+
 ## 데이터 흐름
 
 1. 렌더러가 IPC로 요청 (예: "이 저장소의 status", "이 커밋의 diff")

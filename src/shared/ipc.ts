@@ -1,5 +1,13 @@
 export const IpcChannels = {
   ping: "diff-scope:ping",
+  listRepositories: "diff-scope:repositories:list",
+  addRepository: "diff-scope:repositories:add",
+  removeRepository: "diff-scope:repositories:remove",
+  listWorktrees: "diff-scope:git:worktrees",
+  getStatus: "diff-scope:git:status",
+  getLog: "diff-scope:git:log",
+  getWorkingDiff: "diff-scope:git:working-diff",
+  getCommitDiff: "diff-scope:git:commit-diff",
 } as const;
 
 export type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels];

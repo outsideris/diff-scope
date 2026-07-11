@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { app, BrowserWindow } from "electron";
 import { registerIpcHandlers } from "./ipc";
+import { RepositoryStore } from "./store/repositories";
 
 function createWindow(): void {
   const window = new BrowserWindow({
@@ -20,7 +21,8 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  registerIpcHandlers();
+  const store = new RepositoryStore(join(app.getPath("userData"), "repositories.json"));
+  registerIpcHandlers(store);
   createWindow();
 
   app.on("activate", () => {

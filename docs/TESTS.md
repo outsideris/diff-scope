@@ -10,15 +10,16 @@ Vitest, node 환경, `src/**/*.test.ts` 패턴.
 
 ## 테스트 현황
 
-| 테스트 파일                     | 대상                              | 검증 범위                                                                                                                                  |
-| ------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `src/main/ipc.test.ts`          | `registerIpcHandlers`             | ping 핸들러가 올바른 채널에 등록되고 pong을 반환하는지 (electron mock)                                                                     |
-| `src/preload/index.test.ts`     | preload API                       | `diffScope` API가 contextBridge로 노출되고 `ping()`이 올바른 채널을 invoke 하는지 (electron mock)                                          |
-| `src/main/git/exec.test.ts`     | `runGit`, `GitError`              | 인자/cwd 전달, 실패 시 종료 코드·stderr를 담은 GitError, `allowExitCodes`, git 실행 불가(ENOENT) 처리 (child_process mock)                 |
-| `src/main/git/status.test.ts`   | `parseStatusPorcelainV2`          | 브랜치 헤더(ahead/behind, detached, initial), 일반 변경(XY 분리, 공백 경로), rename(원본 경로), unmerged, untracked, ignored 무시, 빈 출력 |
-| `src/main/git/worktree.test.ts` | `parseWorktreeList`               | 메인/연결 워크트리, branch 프리픽스 제거, detached/bare/locked, 빈 출력, 마지막 구분자 누락                                                |
-| `src/main/git/log.test.ts`      | `logArgs`, `parseLog`, `getLog`   | 인자 구성(limit/ref), 부모 커밋·여러 줄 body 파싱, 빈 출력, 빈 저장소는 빈 배열, 그 외 GitError 재던짐 (runGit mock)                       |
-| `src/main/git/diff.test.ts`     | `getWorkingDiff`, `getCommitDiff` | unstaged/staged/경로 한정/untracked(no-index, exit 1 허용) 인자 구성, path 없는 untracked 요청 거부 (runGit mock)                          |
+| 테스트 파일                           | 대상                              | 검증 범위                                                                                                                                  |
+| ------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/main/ipc.test.ts`                | `registerIpcHandlers`             | 모든 IPC 채널 등록, 저장소 추가 시 루트 해석 후 스토어 위임, git 조회 인자 위임 (electron/git 모듈 mock)                                   |
+| `src/preload/index.test.ts`           | preload API                       | `diffScope`의 모든 메서드가 대응하는 IPC 채널을 올바른 인자로 invoke 하는지 (electron mock)                                                |
+| `src/main/git/exec.test.ts`           | `runGit`, `GitError`              | 인자/cwd 전달, 실패 시 종료 코드·stderr를 담은 GitError, `allowExitCodes`, git 실행 불가(ENOENT) 처리 (child_process mock)                 |
+| `src/main/git/status.test.ts`         | `parseStatusPorcelainV2`          | 브랜치 헤더(ahead/behind, detached, initial), 일반 변경(XY 분리, 공백 경로), rename(원본 경로), unmerged, untracked, ignored 무시, 빈 출력 |
+| `src/main/git/worktree.test.ts`       | `parseWorktreeList`               | 메인/연결 워크트리, branch 프리픽스 제거, detached/bare/locked, 빈 출력, 마지막 구분자 누락                                                |
+| `src/main/git/log.test.ts`            | `logArgs`, `parseLog`, `getLog`   | 인자 구성(limit/ref), 부모 커밋·여러 줄 body 파싱, 빈 출력, 빈 저장소는 빈 배열, 그 외 GitError 재던짐 (runGit mock)                       |
+| `src/main/git/diff.test.ts`           | `getWorkingDiff`, `getCommitDiff` | unstaged/staged/경로 한정/untracked(no-index, exit 1 허용) 인자 구성, path 없는 untracked 요청 거부 (runGit mock)                          |
+| `src/main/store/repositories.test.ts` | `RepositoryStore`                 | 파일 없음→빈 목록, 추가/영속화/재로드, 중복 경로 무시, 삭제, 깨진 JSON은 빈 목록 취급 (임시 디렉토리 실제 파일)                            |
 
 ## 테스트 방침
 

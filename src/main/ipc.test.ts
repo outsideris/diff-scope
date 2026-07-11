@@ -1,20 +1,84 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { IpcChannels } from "../shared/ipc";
 import { registerIpcHandlers } from "./ipc";
+import type { RepositoryStore } from "./store/repositories";
 
-const { handle } = vi.hoisted(() => ({ handle: vi.fn() }));
-
-vi.mock("electron", () => ({
-  ipcMain: { handle },
+const { handle, git } = vi.hoisted(() => ({
+  handle: vi.fn(),
+  git: {
+    resolveRepositoryRoot: vi.fn(),
+    listWorktrees: vi.fn(),
+    getRepoStatus: vi.fn(),
+    getLog: vi.fn(),
+    getWorkingDiff: vi.fn(),
+    getCommitDiff: vi.fn(),
+  },
 }));
 
-describe("registerIpcHandlers", () => {
-  it("registers a ping handler that replies with pong", () => {
-    registerIpcHandlers();
+vi.mock("electron", () => ({ ipcMain: { handle } }));
+vi.mock("./git/repository", () => ({ resolveRepositoryRoot: git.resolveRepositoryRoot }));
+vi.mock("./git/worktree", () => ({ listWorktrees: git.listWorktrees }));
+vi.mock("./git/status", () => ({ getRepoStatus: git.getRepoStatus }));
+vi.mock("./git/log", () => ({ getLog: git.getLog }));
+vi.mock("./git/diff", () => ({
+  getWorkingDiff: git.getWorkingDiff,
+  getCommitDiff: git.getCommitDiff,
+}));
 
-    expect(handle).toHaveBeenCalledTimes(1);
-    const [channel, handler] = handle.mock.calls[0] as [string, () => string];
-    expect(channel).toBe(IpcChannels.ping);
-    expect(handler()).toBe("pong");
+const store = {
+  list: vi.fn(),
+  add: vi.fn(),
+  remove: vi.fn(),
+} as unknown as RepositoryStore & { list: ReturnType<typeof vi.fn>; add: ReturnType<typeof vi.fn> };
+
+type Handler = (event: unknown, ...args: unknown[]) => unknown;
+
+function handlerFor(channel: string): Handler {
+  const call = handle.mock.calls.find(([registered]) => registered === channel);
+  if (!call) throw new Error(`no handler registered for ${channel}`);
+  return call[1] as Handler;
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  registerIpcHandlers(store);
+});
+
+describe("registerIpcHandlers", () => {
+  it("registers a handler for every channel", () => {
+    const registered = handle.mock.calls.map(([channel]) => channel);
+    expect(registered.sort()).toEqual(Object.values(IpcChannels).sort());
+  });
+
+  it("keeps the ping handler replying pong", () => {
+    expect(handlerFor(IpcChannels.ping)(null)).toBe("pong");
+  });
+
+  it("resolves the repository root before adding it to the store", async () => {
+    git.resolveRepositoryRoot.mockResolvedValueOnce("/repos/project");
+    store.add.mockResolvedValueOnce([{ path: "/repos/project", name: "project" }]);
+
+    const result = await handlerFor(IpcChannels.addRepository)(null, "/repos/project/src/deep");
+
+    expect(git.resolveRepositoryRoot).toHaveBeenCalledWith("/repos/project/src/deep");
+    expect(store.add).toHaveBeenCalledWith({ path: "/repos/project", name: "project" });
+    expect(result).toEqual([{ path: "/repos/project", name: "project" }]);
+  });
+
+  it("delegates git queries with their arguments", async () => {
+    await handlerFor(IpcChannels.listWorktrees)(null, "/repos/a");
+    expect(git.listWorktrees).toHaveBeenCalledWith("/repos/a");
+
+    await handlerFor(IpcChannels.getStatus)(null, "/repos/a");
+    expect(git.getRepoStatus).toHaveBeenCalledWith("/repos/a");
+
+    await handlerFor(IpcChannels.getLog)(null, "/repos/a", { limit: 10 });
+    expect(git.getLog).toHaveBeenCalledWith("/repos/a", { limit: 10 });
+
+    await handlerFor(IpcChannels.getWorkingDiff)(null, "/repos/a", { staged: true });
+    expect(git.getWorkingDiff).toHaveBeenCalledWith("/repos/a", { staged: true });
+
+    await handlerFor(IpcChannels.getCommitDiff)(null, "/repos/a", "abc123");
+    expect(git.getCommitDiff).toHaveBeenCalledWith("/repos/a", "abc123");
   });
 });

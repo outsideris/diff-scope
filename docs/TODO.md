@@ -13,14 +13,15 @@
 - [x] IPC 계층 골격 (contextBridge, typed API)
 - [x] QUALITY_GATE.md를 실제 스크립트에 맞게 갱신
 
-## Phase 2: Git 데이터 계층
+## Phase 2: Git 데이터 계층 — [계획](plan/phase-2-git-data-layer.md) ✅
 
-- [ ] git CLI 실행 래퍼 및 오류 처리
-- [ ] `git status --porcelain=v2` 파서 (staged/unstaged 구분)
-- [ ] `git worktree list --porcelain` 파서
-- [ ] `git log` 파서 (히스토리 목록)
-- [ ] diff 출력 획득 (`git diff`, `git diff --cached`, `git show`)
-- [ ] 저장소 등록/목록 관리 및 설정 저장
+- [x] git CLI 실행 래퍼 및 오류 처리 (`runGit`/`GitError`)
+- [x] `git status --porcelain=v2` 파서 (staged/unstaged 구분)
+- [x] `git worktree list --porcelain` 파서
+- [x] `git log` 파서 (히스토리 목록)
+- [x] diff 출력 획득 (`git diff`, `git diff --cached`, untracked, `git show`)
+- [x] 저장소 등록/목록 관리 및 설정 저장 (`RepositoryStore`)
+- [x] IPC 채널·preload typed API로 렌더러에 노출
 
 ## Phase 3: UI
 
