@@ -23,11 +23,18 @@
 - [x] 저장소 등록/목록 관리 및 설정 저장 (`RepositoryStore`)
 - [x] IPC 채널·preload typed API로 렌더러에 노출
 
-## Phase 3: UI
+## Phase 3: UI — [계획](plan/phase-3-ui.md) ✅
 
-- [ ] 저장소/워크트리 전환 UI
-- [ ] 작업 상태 화면 (staged/unstaged 파일 목록 + diff)
-- [ ] 커밋 히스토리 탐색 화면
-- [ ] diff 뷰 (unified/split 전환, 문법 강조)
+- [x] 저장소/워크트리 전환 UI (사이드바, 디렉토리 선택 다이얼로그로 저장소 추가)
+- [x] 작업 상태 화면 (staged/unstaged/untracked 파일 목록 + diff)
+- [x] 커밋 히스토리 탐색 화면 (커밋 목록 + 커밋 상세 + diff)
+- [x] diff 뷰 (unified/split 전환, Shiki 문법 강조, 라이트/다크 테마)
+
+## Phase 4 후보 (미정)
+
+- [ ] 파일 시스템 감시 기반 자동 새로고침
+- [ ] 대용량 diff 렌더링 성능 (가상 스크롤, 지연 렌더링)
+- [ ] 브랜치/태그 선택 후 히스토리 조회, 커밋 범위 비교
+- [ ] dmg 패키징 (electron-builder)
 
 각 Phase를 시작할 때 `docs/plan/`에 상세 계획 문서를 만들고 여기에 링크한다.

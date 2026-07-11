@@ -47,8 +47,18 @@ src/main/git/diff.ts         # working/staged/untracked/commit diff 원문 조�
 src/main/git/repository.ts   # 경로 → 저장소 루트 해석
 src/main/store/repositories.ts  # 저장소 목록 JSON 영속화 (userData/repositories.json)
 src/preload/index.ts         # window.diffScope typed API
-src/renderer/                # React UI
+src/renderer/src/App.tsx     # 최상위 상태 (저장소/워크트리 선택, Working|History 뷰 전환)
+src/renderer/src/components/ # Sidebar, WorkingView, HistoryView, DiffPane
+src/renderer/src/lib/        # 순수 로직: parseDiff(diff 섹션 분할), status(그룹핑), lang, useAsync
 ```
+
+## 렌더러 구조
+
+- **Sidebar**: 저장소 목록과 각 저장소의 워크트리. `selectDirectory` IPC(macOS 디렉토리 다이얼로그)로 저장소를 추가한다.
+- **WorkingView**: `getStatus` 결과를 Staged / Changes(unstaged+untracked)로 그룹핑(`lib/status.ts`), 파일 선택 시 `getWorkingDiff`로 diff 조회.
+- **HistoryView**: `getLog` 커밋 목록, 선택 시 `getCommitDiff`.
+- **DiffPane**: diff 원문을 `lib/parseDiff.ts`로 파일 섹션 단위로 쪼개 `@git-diff-view/react`의 `DiffView`로 렌더링. Shiki highlighter(`@git-diff-view/shiki`)와 unified/split 전환, 라이트/다크 테마 지원.
+- **주의**: `DiffView`의 `data.hunks`에는 `@@` 이후 텍스트가 아니라 `diff --git` 헤더를 포함한 파일 섹션 전체를 넘겨야 라인이 렌더링된다.
 
 ## 데이터 흐름
 

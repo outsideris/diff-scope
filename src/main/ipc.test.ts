@@ -15,7 +15,9 @@ const { handle, git } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("electron", () => ({ ipcMain: { handle } }));
+const { showOpenDialog } = vi.hoisted(() => ({ showOpenDialog: vi.fn() }));
+
+vi.mock("electron", () => ({ ipcMain: { handle }, dialog: { showOpenDialog } }));
 vi.mock("./git/repository", () => ({ resolveRepositoryRoot: git.resolveRepositoryRoot }));
 vi.mock("./git/worktree", () => ({ listWorktrees: git.listWorktrees }));
 vi.mock("./git/status", () => ({ getRepoStatus: git.getRepoStatus }));
@@ -52,6 +54,14 @@ describe("registerIpcHandlers", () => {
 
   it("keeps the ping handler replying pong", () => {
     expect(handlerFor(IpcChannels.ping)(null)).toBe("pong");
+  });
+
+  it("returns the picked directory or null when the dialog is canceled", async () => {
+    showOpenDialog.mockResolvedValueOnce({ canceled: false, filePaths: ["/repos/picked"] });
+    await expect(handlerFor(IpcChannels.selectDirectory)(null)).resolves.toBe("/repos/picked");
+
+    showOpenDialog.mockResolvedValueOnce({ canceled: true, filePaths: [] });
+    await expect(handlerFor(IpcChannels.selectDirectory)(null)).resolves.toBeNull();
   });
 
   it("resolves the repository root before adding it to the store", async () => {

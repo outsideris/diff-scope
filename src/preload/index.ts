@@ -12,6 +12,8 @@ import { IpcChannels } from "../shared/ipc";
 const api = {
   ping: (): Promise<string> => ipcRenderer.invoke(IpcChannels.ping),
 
+  selectDirectory: (): Promise<string | null> => ipcRenderer.invoke(IpcChannels.selectDirectory),
+
   listRepositories: (): Promise<RepositoryEntry[]> =>
     ipcRenderer.invoke(IpcChannels.listRepositories),
   addRepository: (path: string): Promise<RepositoryEntry[]> =>

@@ -1,5 +1,5 @@
 import { basename } from "node:path";
-import { ipcMain } from "electron";
+import { dialog, ipcMain } from "electron";
 import type { LogOptions, WorkingDiffOptions } from "../shared/git";
 import { IpcChannels } from "../shared/ipc";
 import { getCommitDiff, getWorkingDiff } from "./git/diff";
@@ -11,6 +11,11 @@ import type { RepositoryStore } from "./store/repositories";
 
 export function registerIpcHandlers(store: RepositoryStore): void {
   ipcMain.handle(IpcChannels.ping, () => "pong");
+
+  ipcMain.handle(IpcChannels.selectDirectory, async () => {
+    const result = await dialog.showOpenDialog({ properties: ["openDirectory"] });
+    return result.canceled ? null : (result.filePaths[0] ?? null);
+  });
 
   ipcMain.handle(IpcChannels.listRepositories, () => store.list());
   ipcMain.handle(IpcChannels.addRepository, async (_event, path: string) => {

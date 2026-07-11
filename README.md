@@ -4,12 +4,12 @@ Git 워킹 디렉토리, 워크트리, 커밋 히스토리를 오가며 코드 �
 
 Claude Code, ChatGPT 같은 코딩 에이전트로 작업하다 보면 여러 워크트리와 브랜치에서 동시에 변경이 쌓이는데, 이를 터미널에서 일일이 확인하기 어렵다. diff-scope는 GitHub 스타일의 익숙한 diff 화면으로 이런 변경사항을 한곳에서 탐색하는 개인 도구다.
 
-## 주요 기능 (계획)
+## 주요 기능
 
-- 등록된 저장소와 워크트리를 오가며 diff 보기
+- 등록된 저장소와 워크트리를 오가며 diff 보기 (디렉토리 다이얼로그로 저장소 등록, 워크트리 자동 발견)
 - 커밋 히스토리를 따라 이동하며 이전 커밋의 변경 내역 보기
-- 아직 커밋되지 않은 변경(unstaged)과 스테이징된(staged) 파일 목록 및 diff 보기
-- GitHub 스타일 diff 렌더링 (unified/split, word-level 하이라이트, 문법 강조)
+- 아직 커밋되지 않은 변경(unstaged/untracked)과 스테이징된(staged) 파일 목록 및 diff 보기
+- GitHub 스타일 diff 렌더링 (unified/split 전환, word-level 하이라이트, Shiki 문법 강조, 라이트/다크 테마)
 
 ## 기술 스택
 

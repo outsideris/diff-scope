@@ -26,6 +26,7 @@ describe("preload api", () => {
 
     const cases: Array<[() => Promise<unknown>, unknown[]]> = [
       [() => api.ping(), [IpcChannels.ping]],
+      [() => api.selectDirectory(), [IpcChannels.selectDirectory]],
       [() => api.listRepositories(), [IpcChannels.listRepositories]],
       [() => api.addRepository("/repos/a"), [IpcChannels.addRepository, "/repos/a"]],
       [() => api.removeRepository("/repos/a"), [IpcChannels.removeRepository, "/repos/a"]],

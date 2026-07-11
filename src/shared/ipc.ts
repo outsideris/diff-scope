@@ -1,5 +1,6 @@
 export const IpcChannels = {
   ping: "diff-scope:ping",
+  selectDirectory: "diff-scope:select-directory",
   listRepositories: "diff-scope:repositories:list",
   addRepository: "diff-scope:repositories:add",
   removeRepository: "diff-scope:repositories:remove",
