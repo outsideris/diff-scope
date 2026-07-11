@@ -22,4 +22,21 @@ Claude Code, ChatGPT 같은 코딩 에이전트로 작업하다 보면 여러 �
 
 ## 빌드 / 실행
 
-아직 스캐폴딩 전이다. 프로젝트 구성 후 이 섹션에 실행 방법을 기록한다.
+시스템에 `git`이 설치되어 있어야 한다.
+
+```sh
+npm install        # 의존성 설치
+npm run dev        # 개발 모드로 앱 실행
+npm run build      # 프로덕션 빌드 (out/)
+```
+
+## 검증
+
+```sh
+npm test              # 테스트 (Vitest)
+npm run typecheck     # 타입 체크 (main/preload + renderer)
+npm run lint          # 린트 (oxlint)
+npm run format:check  # 포맷 검사 (oxfmt)
+```
+
+커밋 전 확인 항목은 [docs/QUALITY_GATE.md](docs/QUALITY_GATE.md) 참고.

@@ -5,13 +5,13 @@
 - [x] 기술 스택 결정 (Electron + React + Vite + @git-diff-view/react + Shiki, git CLI) — [DESIGN.md](DESIGN.md)
 - [x] git 저장소 초기화 및 문서 구조 생성
 
-## Phase 1: 스캐폴딩 — [계획](plan/phase-1-scaffolding.md)
+## Phase 1: 스캐폴딩 — [계획](plan/phase-1-scaffolding.md) ✅
 
-- [ ] Electron + Vite + React + TypeScript 프로젝트 스캐폴딩
-- [ ] oxlint + oxfmt 설정
-- [ ] 테스트 러너 설정 (Vitest)
-- [ ] IPC 계층 골격 (contextBridge, typed API)
-- [ ] QUALITY_GATE.md를 실제 스크립트에 맞게 갱신
+- [x] Electron + Vite + React + TypeScript 프로젝트 스캐폴딩 (electron-vite)
+- [x] oxlint + oxfmt 설정
+- [x] 테스트 러너 설정 (Vitest)
+- [x] IPC 계층 골격 (contextBridge, typed API)
+- [x] QUALITY_GATE.md를 실제 스크립트에 맞게 갱신
 
 ## Phase 2: Git 데이터 계층
 

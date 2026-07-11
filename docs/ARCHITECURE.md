@@ -23,14 +23,14 @@ Electron 앱. 아직 스캐폴딩 전이며, 아래는 결정된 구조 방향�
 
 ## 기술 스택
 
-| 영역 | 선택 |
-|---|---|
-| 셸 | Electron |
-| 프론트엔드 | React + Vite (TypeScript) |
-| diff 렌더링 | `@git-diff-view/react` |
-| 문법 강조 | Shiki |
-| Git 접근 | git CLI 실행 (`child_process`) + 출력 파싱 |
-| 린트/포맷 | oxlint + oxfmt |
+| 영역        | 선택                                       |
+| ----------- | ------------------------------------------ |
+| 셸          | Electron                                   |
+| 프론트엔드  | React + Vite (TypeScript)                  |
+| diff 렌더링 | `@git-diff-view/react`                     |
+| 문법 강조   | Shiki                                      |
+| Git 접근    | git CLI 실행 (`child_process`) + 출력 파싱 |
+| 린트/포맷   | oxlint + oxfmt                             |
 
 ## 데이터 흐름
 
