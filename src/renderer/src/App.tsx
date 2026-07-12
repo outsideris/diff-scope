@@ -7,8 +7,13 @@ import { shortenPath } from "./lib/format";
 
 type ViewKind = "working" | "history";
 
+const SIDEBAR_COLLAPSED_KEY = "diff-scope:sidebar-collapsed";
+
 export function App(): JSX.Element {
   const [repos, setRepos] = useState<RepositoryEntry[]>([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true",
+  );
   const [worktrees, setWorktrees] = useState<Record<string, Worktree[]>>({});
   const [dirtyCounts, setDirtyCounts] = useState<Record<string, number>>({});
   const [selectedDir, setSelectedDir] = useState<string | null>(null);
@@ -90,6 +95,13 @@ export function App(): JSX.Element {
     }
   }, [refreshRepos]);
 
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(!prev));
+      return !prev;
+    });
+  }, []);
+
   const removeRepository = useCallback(
     async (repoPath: string) => {
       const list = await window.diffScope.removeRepository(repoPath);
@@ -123,6 +135,8 @@ export function App(): JSX.Element {
         worktrees={worktrees}
         dirtyCounts={dirtyCounts}
         selectedDir={selectedDir}
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={toggleSidebar}
         onSelect={setSelectedDir}
         onAdd={addRepository}
         onRemove={removeRepository}

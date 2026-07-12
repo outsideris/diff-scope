@@ -74,6 +74,37 @@ code {
   flex-direction: column;
 }
 
+.sidebar.collapsed {
+  width: 42px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sidebar {
+    transition: width 0.15s ease;
+  }
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border-soft);
+  padding: 8px 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sidebar.collapsed .sidebar-footer {
+  justify-content: center;
+  padding: 8px 4px;
+}
+
+.sidebar-footer .icon-button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+}
+
 .sidebar-header {
   display: flex;
   align-items: center;
