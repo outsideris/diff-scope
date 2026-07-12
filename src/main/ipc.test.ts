@@ -11,6 +11,7 @@ const { handle, git } = vi.hoisted(() => ({
     getRepoStatus: vi.fn(),
     getLog: vi.fn(),
     getWorkingDiff: vi.fn(),
+    getWorkingNumstat: vi.fn(),
     getCommitDiff: vi.fn(),
   },
 }));
@@ -22,6 +23,7 @@ vi.mock("./git/repository", () => ({ resolveRepositoryRoot: git.resolveRepositor
 vi.mock("./git/worktree", () => ({ listWorktrees: git.listWorktrees }));
 vi.mock("./git/status", () => ({ getRepoStatus: git.getRepoStatus }));
 vi.mock("./git/log", () => ({ getLog: git.getLog }));
+vi.mock("./git/numstat", () => ({ getWorkingNumstat: git.getWorkingNumstat }));
 vi.mock("./git/diff", () => ({
   getWorkingDiff: git.getWorkingDiff,
   getCommitDiff: git.getCommitDiff,
@@ -87,6 +89,9 @@ describe("registerIpcHandlers", () => {
 
     await handlerFor(IpcChannels.getWorkingDiff)(null, "/repos/a", { staged: true });
     expect(git.getWorkingDiff).toHaveBeenCalledWith("/repos/a", { staged: true });
+
+    await handlerFor(IpcChannels.getWorkingNumstat)(null, "/repos/a", { staged: true });
+    expect(git.getWorkingNumstat).toHaveBeenCalledWith("/repos/a", { staged: true });
 
     await handlerFor(IpcChannels.getCommitDiff)(null, "/repos/a", "abc123");
     expect(git.getCommitDiff).toHaveBeenCalledWith("/repos/a", "abc123");

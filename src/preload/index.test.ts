@@ -38,6 +38,10 @@ describe("preload api", () => {
         [IpcChannels.getWorkingDiff, "/repos/a", { staged: true }],
       ],
       [
+        () => api.getWorkingNumstat("/repos/a", { staged: true }),
+        [IpcChannels.getWorkingNumstat, "/repos/a", { staged: true }],
+      ],
+      [
         () => api.getCommitDiff("/repos/a", "abc123"),
         [IpcChannels.getCommitDiff, "/repos/a", "abc123"],
       ],

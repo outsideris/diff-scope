@@ -4,6 +4,7 @@ import type { LogOptions, WorkingDiffOptions } from "../shared/git";
 import { IpcChannels } from "../shared/ipc";
 import { getCommitDiff, getWorkingDiff } from "./git/diff";
 import { getLog } from "./git/log";
+import { getWorkingNumstat } from "./git/numstat";
 import { resolveRepositoryRoot } from "./git/repository";
 import { getRepoStatus } from "./git/status";
 import { listWorktrees } from "./git/worktree";
@@ -31,6 +32,10 @@ export function registerIpcHandlers(store: RepositoryStore): void {
   );
   ipcMain.handle(IpcChannels.getWorkingDiff, (_event, dir: string, options?: WorkingDiffOptions) =>
     getWorkingDiff(dir, options),
+  );
+  ipcMain.handle(
+    IpcChannels.getWorkingNumstat,
+    (_event, dir: string, options?: { staged?: boolean }) => getWorkingNumstat(dir, options),
   );
   ipcMain.handle(IpcChannels.getCommitDiff, (_event, dir: string, hash: string) =>
     getCommitDiff(dir, hash),

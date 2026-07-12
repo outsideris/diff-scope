@@ -63,3 +63,11 @@ export interface RepositoryEntry {
   path: string;
   name: string;
 }
+
+/** git diff --numstat 한 항목. 바이너리 파일은 added/deleted가 null */
+export interface NumstatEntry {
+  path: string;
+  origPath: string | null;
+  added: number | null;
+  deleted: number | null;
+}

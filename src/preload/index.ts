@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import type {
   CommitInfo,
   LogOptions,
+  NumstatEntry,
   RepositoryEntry,
   RepoStatus,
   WorkingDiffOptions,
@@ -28,6 +29,8 @@ const api = {
     ipcRenderer.invoke(IpcChannels.getLog, dir, options),
   getWorkingDiff: (dir: string, options?: WorkingDiffOptions): Promise<string> =>
     ipcRenderer.invoke(IpcChannels.getWorkingDiff, dir, options),
+  getWorkingNumstat: (dir: string, options?: { staged?: boolean }): Promise<NumstatEntry[]> =>
+    ipcRenderer.invoke(IpcChannels.getWorkingNumstat, dir, options),
   getCommitDiff: (dir: string, hash: string): Promise<string> =>
     ipcRenderer.invoke(IpcChannels.getCommitDiff, dir, hash),
 };
