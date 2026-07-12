@@ -13,6 +13,24 @@ export interface FileDiff {
   isRename: boolean;
 }
 
+export interface HunkLineCount {
+  added: number;
+  deleted: number;
+}
+
+/** hunk 원문에서 추가/삭제 라인 수를 센다 */
+export function countHunkLines(hunks: string): HunkLineCount {
+  let added = 0;
+  let deleted = 0;
+  if (hunks) {
+    for (const line of hunks.split("\n")) {
+      if (line.startsWith("+")) added++;
+      else if (line.startsWith("-")) deleted++;
+    }
+  }
+  return { added, deleted };
+}
+
 /** git diff 원문(여러 파일)을 `diff --git` 섹션 단위로 쪼갠다. */
 export function parseUnifiedDiff(raw: string): FileDiff[] {
   const lines = raw.split("\n");

@@ -1,8 +1,9 @@
 import { DiffModeEnum, DiffView } from "@git-diff-view/react";
 import { getDiffViewHighlighter } from "@git-diff-view/shiki";
 import { type JSX, useEffect, useMemo, useState } from "react";
+import { splitPath } from "../lib/format";
 import { inferLang } from "../lib/lang";
-import { type FileDiff, parseUnifiedDiff } from "../lib/parseDiff";
+import { countHunkLines, type FileDiff, parseUnifiedDiff } from "../lib/parseDiff";
 
 type Highlighter = Awaited<ReturnType<typeof getDiffViewHighlighter>>;
 
@@ -46,6 +47,35 @@ function useDarkMode(): boolean {
 function fileLabel(file: FileDiff): string {
   if (file.isRename && file.oldPath && file.newPath) return `${file.oldPath} → ${file.newPath}`;
   return file.newPath ?? file.oldPath ?? "(unknown)";
+}
+
+function FileName({ file }: { file: FileDiff }): JSX.Element {
+  if (file.isRename && file.oldPath && file.newPath) {
+    return (
+      <span className="diff-file-name">
+        <span className="fdir">{file.oldPath} → </span>
+        <span className="fname">{file.newPath}</span>
+      </span>
+    );
+  }
+  const { dir, name } = splitPath(file.newPath ?? file.oldPath ?? "(unknown)");
+  return (
+    <span className="diff-file-name">
+      <span className="fdir">{dir}</span>
+      <span className="fname">{name}</span>
+    </span>
+  );
+}
+
+function HunkDelta({ file }: { file: FileDiff }): JSX.Element | null {
+  if (file.isBinary || file.hunks === "") return null;
+  const { added, deleted } = countHunkLines(file.hunks);
+  return (
+    <span className="delta">
+      {added > 0 && <span className="p">+{added}</span>}{" "}
+      {deleted > 0 && <span className="m">−{deleted}</span>}
+    </span>
+  );
 }
 
 function fileBadge(file: FileDiff): string | null {
@@ -99,8 +129,10 @@ export function DiffPane({
           return (
             <section className="diff-file" key={label}>
               <header className="diff-file-header">
-                <span className="diff-file-name">{label}</span>
+                <FileName file={file} />
                 {badge && <span className={`badge badge-${badge}`}>{badge}</span>}
+                <span className="spacer"></span>
+                <HunkDelta file={file} />
               </header>
               {file.isBinary ? (
                 <div className="diff-file-note">바이너리 파일</div>

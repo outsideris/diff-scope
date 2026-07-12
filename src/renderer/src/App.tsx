@@ -3,12 +3,14 @@ import type { RepositoryEntry, Worktree } from "../../shared/git";
 import { HistoryView } from "./components/HistoryView";
 import { Sidebar } from "./components/Sidebar";
 import { WorkingView } from "./components/WorkingView";
+import { shortenPath } from "./lib/format";
 
 type ViewKind = "working" | "history";
 
 export function App(): JSX.Element {
   const [repos, setRepos] = useState<RepositoryEntry[]>([]);
   const [worktrees, setWorktrees] = useState<Record<string, Worktree[]>>({});
+  const [dirtyCounts, setDirtyCounts] = useState<Record<string, number>>({});
   const [selectedDir, setSelectedDir] = useState<string | null>(null);
   const [view, setView] = useState<ViewKind>("working");
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +39,19 @@ export function App(): JSX.Element {
       }),
     );
     setWorktrees(Object.fromEntries(results));
+
+    const dirs = results.flatMap(([, list]) => list.filter((w) => !w.bare).map((w) => w.path));
+    const counts = await Promise.all(
+      dirs.map(async (dir) => {
+        try {
+          const status = await window.diffScope.getStatus(dir);
+          return [dir, status.entries.length] as const;
+        } catch {
+          return [dir, 0] as const;
+        }
+      }),
+    );
+    setDirtyCounts(Object.fromEntries(counts));
   }, []);
 
   const refreshRepos = useCallback(
@@ -89,11 +104,24 @@ export function App(): JSX.Element {
     [refreshRepos],
   );
 
+  const selectedWorktree =
+    selectedDir === null
+      ? null
+      : (Object.values(worktrees)
+          .flat()
+          .find((worktree) => worktree.path === selectedDir) ?? null);
+  const location = selectedDir === null ? null : shortenPath(selectedDir);
+  const branchLabel = selectedWorktree
+    ? (selectedWorktree.branch ??
+      (selectedWorktree.detached ? `detached ${selectedWorktree.head?.slice(0, 7) ?? ""}` : null))
+    : null;
+
   return (
     <div className="app">
       <Sidebar
         repos={repos}
         worktrees={worktrees}
+        dirtyCounts={dirtyCounts}
         selectedDir={selectedDir}
         onSelect={setSelectedDir}
         onAdd={addRepository}
@@ -102,7 +130,17 @@ export function App(): JSX.Element {
       <main className="content">
         <header className="toolbar">
           <div className="location" title={selectedDir ?? ""}>
-            {selectedDir ?? "저장소를 선택하세요"}
+            {location ? (
+              <>
+                <span className="path">
+                  {location.prefix}
+                  <b>{location.base}</b>
+                </span>
+                {branchLabel && <span className="chip">{branchLabel}</span>}
+              </>
+            ) : (
+              <span className="path">저장소를 선택하세요</span>
+            )}
           </div>
           <div className="segmented">
             <button

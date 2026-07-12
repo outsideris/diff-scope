@@ -1,4 +1,6 @@
 import { type JSX, useEffect, useMemo, useState } from "react";
+import type { NumstatEntry, RepoStatus } from "../../../shared/git";
+import { splitPath } from "../lib/format";
 import { groupStatusEntries, type WorkingFile } from "../lib/status";
 import { useAsync } from "../lib/useAsync";
 import { DiffPane } from "./DiffPane";
@@ -9,20 +11,42 @@ interface Selection {
   untracked: boolean;
 }
 
+interface WorkingData {
+  status: RepoStatus;
+  unstagedStats: NumstatEntry[];
+  stagedStats: NumstatEntry[];
+}
+
 function selectionFor(file: WorkingFile, staged: boolean): Selection {
   return { path: file.path, staged, untracked: file.untracked };
+}
+
+function statsMap(entries: NumstatEntry[]): Map<string, NumstatEntry> {
+  return new Map(entries.map((entry) => [entry.path, entry]));
+}
+
+function Delta({ stat }: { stat: NumstatEntry | undefined }): JSX.Element | null {
+  if (!stat || (stat.added === null && stat.deleted === null)) return null;
+  return (
+    <span className="delta">
+      {stat.added !== null && stat.added > 0 && <span className="p">+{stat.added}</span>}{" "}
+      {stat.deleted !== null && stat.deleted > 0 && <span className="m">−{stat.deleted}</span>}
+    </span>
+  );
 }
 
 function FileList({
   title,
   files,
   staged,
+  stats,
   selection,
   onSelect,
 }: {
   title: string;
   files: WorkingFile[];
   staged: boolean;
+  stats: Map<string, NumstatEntry>;
   selection: Selection | null;
   onSelect: (selection: Selection) => void;
 }): JSX.Element {
@@ -36,6 +60,7 @@ function FileList({
         {files.map((file) => {
           const selected =
             selection !== null && selection.staged === staged && selection.path === file.path;
+          const { dir, name } = splitPath(file.path);
           return (
             <li key={`${file.path}:${file.code}`}>
               <button
@@ -47,7 +72,11 @@ function FileList({
                 <span className={`status-code code-${file.code === "?" ? "untracked" : file.code}`}>
                   {file.code === "?" ? "U" : file.code}
                 </span>
-                <span className="file-path">{file.path}</span>
+                <span className="file-path">
+                  <span className="dir">{dir}</span>
+                  <span className="fname">{name}</span>
+                </span>
+                <Delta stat={stats.get(file.path)} />
               </button>
             </li>
           );
@@ -58,13 +87,22 @@ function FileList({
 }
 
 export function WorkingView({ dir }: { dir: string }): JSX.Element {
-  const status = useAsync(() => window.diffScope.getStatus(dir), [dir]);
+  const working = useAsync<WorkingData>(async () => {
+    const [status, unstagedStats, stagedStats] = await Promise.all([
+      window.diffScope.getStatus(dir),
+      window.diffScope.getWorkingNumstat(dir),
+      window.diffScope.getWorkingNumstat(dir, { staged: true }),
+    ]);
+    return { status, unstagedStats, stagedStats };
+  }, [dir]);
   const [selection, setSelection] = useState<Selection | null>(null);
 
   const grouped = useMemo(
-    () => (status.data ? groupStatusEntries(status.data) : { staged: [], unstaged: [] }),
-    [status.data],
+    () => (working.data ? groupStatusEntries(working.data.status) : { staged: [], unstaged: [] }),
+    [working.data],
   );
+  const unstagedStats = useMemo(() => statsMap(working.data?.unstagedStats ?? []), [working.data]);
+  const stagedStats = useMemo(() => statsMap(working.data?.stagedStats ?? []), [working.data]);
 
   // 디렉토리가 바뀌거나 목록에서 사라진 파일이 선택되어 있으면 선택을 보정한다.
   useEffect(() => {
@@ -72,7 +110,7 @@ export function WorkingView({ dir }: { dir: string }): JSX.Element {
   }, [dir]);
 
   useEffect(() => {
-    if (status.data === null) return;
+    if (working.data === null) return;
     const stillThere =
       selection !== null &&
       (selection.staged ? grouped.staged : grouped.unstaged).some(
@@ -82,7 +120,7 @@ export function WorkingView({ dir }: { dir: string }): JSX.Element {
       const first = grouped.unstaged[0] ?? grouped.staged[0] ?? null;
       setSelection(first ? selectionFor(first, first === grouped.staged[0]) : null);
     }
-  }, [status.data, grouped, selection]);
+  }, [working.data, grouped, selection]);
 
   const diff = useAsync(async () => {
     if (!selection) return "";
@@ -93,9 +131,10 @@ export function WorkingView({ dir }: { dir: string }): JSX.Element {
     });
   }, [dir, selection]);
 
-  const branchInfo = status.data
-    ? `${status.data.detached ? "detached HEAD" : (status.data.branch ?? "?")}` +
-      (status.data.ahead !== null ? ` ↑${status.data.ahead} ↓${status.data.behind}` : "")
+  const status = working.data?.status ?? null;
+  const branchInfo = status
+    ? `${status.detached ? "detached HEAD" : (status.branch ?? "?")}` +
+      (status.ahead !== null ? ` ↑${status.ahead} ↓${status.behind}` : "")
     : "";
 
   return (
@@ -105,15 +144,16 @@ export function WorkingView({ dir }: { dir: string }): JSX.Element {
           <span className="branch-info" title={branchInfo}>
             {branchInfo}
           </span>
-          <button type="button" className="icon-button" title="새로고침" onClick={status.reload}>
+          <button type="button" className="icon-button" title="새로고침" onClick={working.reload}>
             ⟳
           </button>
         </div>
-        {status.error && <div className="error-note">{status.error}</div>}
+        {working.error && <div className="error-note">{working.error}</div>}
         <FileList
           title="Staged"
           files={grouped.staged}
           staged={true}
+          stats={stagedStats}
           selection={selection}
           onSelect={setSelection}
         />
@@ -121,6 +161,7 @@ export function WorkingView({ dir }: { dir: string }): JSX.Element {
           title="Changes"
           files={grouped.unstaged}
           staged={false}
+          stats={unstagedStats}
           selection={selection}
           onSelect={setSelection}
         />
@@ -131,7 +172,7 @@ export function WorkingView({ dir }: { dir: string }): JSX.Element {
         <DiffPane
           diff={diff.data ?? ""}
           emptyMessage={
-            status.data && grouped.staged.length + grouped.unstaged.length === 0
+            status && grouped.staged.length + grouped.unstaged.length === 0
               ? "변경사항이 없습니다"
               : "파일을 선택하세요"
           }

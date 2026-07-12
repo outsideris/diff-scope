@@ -44,6 +44,7 @@ src/main/git/status.ts       # status --porcelain=v2 -z 파서
 src/main/git/worktree.ts     # worktree list --porcelain -z 파서
 src/main/git/log.ts          # log 커스텀 구분자 포맷 파서
 src/main/git/diff.ts         # working/staged/untracked/commit diff 원문 조회
+src/main/git/numstat.ts      # diff --numstat 파서 (파일별 +/− 라인 수)
 src/main/git/repository.ts   # 경로 → 저장소 루트 해석
 src/main/store/repositories.ts  # 저장소 목록 JSON 영속화 (userData/repositories.json)
 src/preload/index.ts         # window.diffScope typed API

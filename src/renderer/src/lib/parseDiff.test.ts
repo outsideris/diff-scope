@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseUnifiedDiff } from "./parseDiff";
+import { countHunkLines, parseUnifiedDiff } from "./parseDiff";
 
 const MODIFIED = `diff --git a/src/app.ts b/src/app.ts
 index e69de29..d95f3ad 100644
@@ -128,5 +128,14 @@ index e69de29..d95f3ad 100644
 
   it("returns an empty list for an empty diff", () => {
     expect(parseUnifiedDiff("")).toEqual([]);
+  });
+});
+
+describe("countHunkLines", () => {
+  it("counts added and deleted lines from hunk text", () => {
+    const [file] = parseUnifiedDiff(MODIFIED);
+
+    expect(countHunkLines(file.hunks)).toEqual({ added: 2, deleted: 1 });
+    expect(countHunkLines("")).toEqual({ added: 0, deleted: 0 });
   });
 });

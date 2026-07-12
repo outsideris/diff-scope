@@ -36,6 +36,21 @@ Tauri 2, Wails, SwiftUI + WKWebView 조합과 비교한 뒤 **Electron**으로 �
 
 libgit2 바인딩(nodegit)이나 isomorphic-git 대신 **git CLI를 직접 실행하고 출력을 파싱**한다. 핵심 요구사항인 워크트리 목록(`git worktree list`), 히스토리(`git log`), staged/unstaged 구분(`git status --porcelain=v2`, `git diff` / `git diff --cached`)이 전부 CLI 한 줄이고, 워크트리·서브모듈 같은 엣지 케이스를 git 본체가 처리해 주기 때문이다.
 
+### UI 디자인: 그라파이트(A안) 채택 (2026-07-12)
+
+세 가지 시안(A 그라파이트 / B 투톤 캔버스 / C 모노 콘솔)을 비교한 뒤 **A안 그라파이트**를 채택했다. 방향은 "macOS의 조용한 도구" — 크롬(사이드바·툴바)은 무채색으로 가라앉히고 diff 콘텐츠가 주인공이 되게 한다.
+
+- **팔레트**: 모든 색은 `src/renderer/src/styles.css`의 CSS 변수로 정의하고 라이트/다크는 `light-dark()` 한 벌로 관리한다. 라이트 창 배경 `#F5F5F7` / 다크 `#1E1F24`(그라파이트, GitHub 청흑이 아님), 액센트 `#4666E5`/`#8AA0FF`.
+- **색의 역할 분리**: 액센트(선택·이동) / added·deleted(의미색) / 상태 칩 — 세 갈래만 쓰고 크롬은 무채색을 유지한다.
+- **타이포**: UI는 시스템 스택(SF Pro), 코드·해시·라인번호·카운트는 `ui-monospace` + `tabular-nums`.
+- **컴포넌트 규칙**:
+  - 파일 경로는 디렉토리를 흐리게, 파일명을 진하게. 경로가 길면 디렉토리만 말줄임하고 파일명은 항상 보인다.
+  - 파일 목록과 diff 카드 헤더에 +/− 라인 통계를 표시한다 (working은 numstat, diff 카드는 hunk 카운트).
+  - 상태 코드(M/A/D/R/U)는 색 배경 + 글자 칩으로, 색에만 의존하지 않는다.
+  - 선택 항목은 액센트 연한 배경 + 좌측 2px 액센트 바.
+  - 사이드바 워크트리에 미커밋 변경 개수 dirty 배지를 단다.
+  - 툴바는 `…/부모/저장소명` 축약 경로 + 브랜치 모노 칩.
+
 ### diff 렌더링: @git-diff-view/react + Shiki (2026-07-11)
 
 GitHub과 거의 동일한 diff UI(unified/split, word-diff, 컨텍스트 확장)를 제공하는 것이 목적인 라이브러리라 요구사항과 정확히 맞는다. 문법 강조는 Shiki를 연동한다. 문제가 생기면 `react-diff-view`, Monaco diff editor가 대안이다.

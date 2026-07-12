@@ -1,12 +1,7 @@
 import { type JSX, useEffect, useState } from "react";
+import { relativeDate } from "../lib/format";
 import { useAsync } from "../lib/useAsync";
 import { DiffPane } from "./DiffPane";
-
-function formatDate(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
 
 export function HistoryView({ dir }: { dir: string }): JSX.Element {
   const log = useAsync(() => window.diffScope.getLog(dir, { limit: 200 }), [dir]);
@@ -47,10 +42,14 @@ export function HistoryView({ dir }: { dir: string }): JSX.Element {
                 className={`commit-item${commit.hash === selectedHash ? " selected" : ""}`}
                 onClick={() => setSelectedHash(commit.hash)}
               >
-                <span className="commit-subject">{commit.subject}</span>
-                <span className="commit-meta">
-                  <code>{commit.shortHash}</code> {commit.authorName} ·{" "}
-                  {formatDate(commit.authorDate)}
+                <span className="avatar">
+                  {commit.authorName.trim().charAt(0).toUpperCase() || "?"}
+                </span>
+                <span className="cmeta">
+                  <span className="commit-subject">{commit.subject}</span>
+                  <span className="commit-meta">
+                    <code>{commit.shortHash}</code> {relativeDate(commit.authorDate)}
+                  </span>
                 </span>
               </button>
             </li>
