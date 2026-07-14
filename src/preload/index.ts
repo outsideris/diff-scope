@@ -9,6 +9,7 @@ import type {
   Worktree,
 } from "../shared/git";
 import { IpcChannels } from "../shared/ipc";
+import type { SessionInfo } from "../shared/session";
 
 const api = {
   ping: (): Promise<string> => ipcRenderer.invoke(IpcChannels.ping),
@@ -33,6 +34,8 @@ const api = {
     ipcRenderer.invoke(IpcChannels.getWorkingNumstat, dir, options),
   getCommitDiff: (dir: string, hash: string): Promise<string> =>
     ipcRenderer.invoke(IpcChannels.getCommitDiff, dir, hash),
+  getSessions: (worktreePaths: string[]): Promise<SessionInfo[]> =>
+    ipcRenderer.invoke(IpcChannels.getSessions, worktreePaths),
 };
 
 export type DiffScopeApi = typeof api;

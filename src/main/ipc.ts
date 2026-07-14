@@ -8,6 +8,7 @@ import { getWorkingNumstat } from "./git/numstat";
 import { resolveRepositoryRoot } from "./git/repository";
 import { getRepoStatus } from "./git/status";
 import { listWorktrees } from "./git/worktree";
+import { collectSessions } from "./sessions/collect";
 import type { RepositoryStore } from "./store/repositories";
 
 export function registerIpcHandlers(store: RepositoryStore): void {
@@ -39,5 +40,9 @@ export function registerIpcHandlers(store: RepositoryStore): void {
   );
   ipcMain.handle(IpcChannels.getCommitDiff, (_event, dir: string, hash: string) =>
     getCommitDiff(dir, hash),
+  );
+
+  ipcMain.handle(IpcChannels.getSessions, (_event, worktreePaths: string[]) =>
+    collectSessions(worktreePaths),
   );
 }

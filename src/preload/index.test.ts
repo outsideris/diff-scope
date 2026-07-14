@@ -45,6 +45,7 @@ describe("preload api", () => {
         () => api.getCommitDiff("/repos/a", "abc123"),
         [IpcChannels.getCommitDiff, "/repos/a", "abc123"],
       ],
+      [() => api.getSessions(["/repos/a"]), [IpcChannels.getSessions, ["/repos/a"]]],
     ];
 
     expect(Object.keys(cases)).toHaveLength(Object.keys(IpcChannels).length);

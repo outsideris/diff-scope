@@ -13,6 +13,7 @@ const { handle, git } = vi.hoisted(() => ({
     getWorkingDiff: vi.fn(),
     getWorkingNumstat: vi.fn(),
     getCommitDiff: vi.fn(),
+    collectSessions: vi.fn(),
   },
 }));
 
@@ -24,6 +25,7 @@ vi.mock("./git/worktree", () => ({ listWorktrees: git.listWorktrees }));
 vi.mock("./git/status", () => ({ getRepoStatus: git.getRepoStatus }));
 vi.mock("./git/log", () => ({ getLog: git.getLog }));
 vi.mock("./git/numstat", () => ({ getWorkingNumstat: git.getWorkingNumstat }));
+vi.mock("./sessions/collect", () => ({ collectSessions: git.collectSessions }));
 vi.mock("./git/diff", () => ({
   getWorkingDiff: git.getWorkingDiff,
   getCommitDiff: git.getCommitDiff,
@@ -95,5 +97,8 @@ describe("registerIpcHandlers", () => {
 
     await handlerFor(IpcChannels.getCommitDiff)(null, "/repos/a", "abc123");
     expect(git.getCommitDiff).toHaveBeenCalledWith("/repos/a", "abc123");
+
+    await handlerFor(IpcChannels.getSessions)(null, ["/repos/a", "/repos/a/wt"]);
+    expect(git.collectSessions).toHaveBeenCalledWith(["/repos/a", "/repos/a/wt"]);
   });
 });

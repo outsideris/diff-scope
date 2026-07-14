@@ -24,6 +24,12 @@ Vitest, node 환경, `src/**/*.test.ts` 패턴.
 | `src/renderer/src/lib/status.test.ts`    | `groupStatusEntries`                       | staged/unstaged 분리, 부분 스테이징 양쪽 표시, untracked/unmerged는 unstaged 섹션 배치                                                     |
 | `src/main/git/numstat.test.ts`           | `parseNumstat`, `numstatArgs`              | 일반/공백 경로, rename 토큰, 바이너리 null, 빈 출력, staged 인자, 조회 위임 (runGit mock)                                                  |
 | `src/renderer/src/lib/format.test.ts`    | `splitPath`, `shortenPath`, `relativeDate` | 경로 분리, 절대 경로 축약, 오늘/어제/n일 전/로컬 날짜/잘못된 입력                                                                          |
+| `src/main/sessions/encode.test.ts`       | `encodeProjectDir`, `normalizePath`        | cwd→프로젝트 디렉토리 인코딩(`/`·`.`→`-`, 숨김 워크트리 이중 대시), 끝 슬래시 정규화                                                       |
+| `src/main/sessions/state.test.ts`        | `resolveState`                             | running > deleted > archived > active 우선순위 판정                                                                                        |
+| `src/main/sessions/running.test.ts`      | `parseRunningSession`                      | pid 파일 파싱, cwd/entrypoint 기본값, 필수 필드/잘못된 JSON 시 null                                                                        |
+| `src/main/sessions/claudeStore.test.ts`  | `parseClaudeMeta`                          | 데스크톱 세션 메타 파싱(isArchived 문자열, lastActivity/createdAt fallback, 빈 branch→null), cliSessionId 없으면 null                      |
+| `src/main/sessions/codex.test.ts`        | `parseCodexHead`                           | session_meta의 cwd/id, `<태그>` 프리앰블 건너뛴 첫 user 제목, 기본 제목, meta 없으면 null                                                  |
+| `src/main/sessions/transcripts.test.ts`  | `deriveTitle`                              | 첫 user 텍스트 메시지 제목(첫 줄·트림), 문자열 content, tool_result 건너뜀, 없으면 null                                                    |
 
 ## 테스트 방침
 
