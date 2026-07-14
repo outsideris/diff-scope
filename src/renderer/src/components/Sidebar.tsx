@@ -1,17 +1,25 @@
-import type { JSX } from "react";
+import { type JSX, useCallback, useState } from "react";
 import type { RepositoryEntry, Worktree } from "../../../shared/git";
+import type { SessionInfo } from "../../../shared/session";
+import { countSessions, isDimmed } from "../lib/session";
+import { SessionList } from "./SessionList";
 
 export interface SidebarProps {
   repos: RepositoryEntry[];
   worktrees: Record<string, Worktree[]>;
   dirtyCounts: Record<string, number>;
+  sessionsByDir: Record<string, SessionInfo[]>;
   selectedDir: string | null;
   collapsed: boolean;
+  showArchived: boolean;
   onToggleCollapsed: () => void;
+  onToggleArchived: () => void;
   onSelect: (dir: string) => void;
   onAdd: () => void;
   onRemove: (repoPath: string) => void;
 }
+
+const EXPANDED_KEY = "diff-scope:expanded-worktrees";
 
 function worktreeLabel(worktree: Worktree): string {
   if (worktree.branch) return worktree.branch;
@@ -27,7 +35,6 @@ function BranchIcon(): JSX.Element {
   );
 }
 
-/** macOS 스타일 패널 토글 아이콘 (왼쪽 패널 강조) */
 function PanelIcon(): JSX.Element {
   return (
     <svg
@@ -44,26 +51,120 @@ function PanelIcon(): JSX.Element {
   );
 }
 
+function Worktree({
+  worktree,
+  dirty,
+  sessions,
+  selected,
+  expanded,
+  showArchived,
+  onSelect,
+  onToggleExpand,
+}: {
+  worktree: Worktree;
+  dirty: number;
+  sessions: SessionInfo[];
+  selected: boolean;
+  expanded: boolean;
+  showArchived: boolean;
+  onSelect: () => void;
+  onToggleExpand: () => void;
+}): JSX.Element {
+  const counts = countSessions(sessions);
+  const hasSessions = counts.total > 0;
+  const hiddenCount = counts.total - counts.live;
+  const visible = showArchived ? sessions : sessions.filter((s) => !isDimmed(s.state));
+
+  return (
+    <li className="worktree-entry">
+      <div className="worktree-row">
+        <button
+          type="button"
+          className={`disclosure${hasSessions ? "" : " empty"}`}
+          aria-label={expanded ? "세션 접기" : "세션 펼치기"}
+          aria-expanded={expanded}
+          onClick={onToggleExpand}
+          disabled={!hasSessions}
+        >
+          {hasSessions ? (expanded ? "▾" : "▸") : ""}
+        </button>
+        <button
+          type="button"
+          className={`worktree-item${selected ? " selected" : ""}`}
+          title={worktree.path}
+          onClick={onSelect}
+        >
+          <BranchIcon />
+          <span className="name">{worktreeLabel(worktree)}</span>
+          {counts.running > 0 && <span className="running-dot" title="실행 중인 세션" />}
+          {counts.total > 0 && <span className="session-count">{counts.total}</span>}
+          {dirty > 0 && <span className="dirty">{dirty}</span>}
+        </button>
+      </div>
+      {expanded && hasSessions && (
+        <>
+          <SessionList sessions={visible} />
+          {!showArchived && hiddenCount > 0 && (
+            <div className="session-hidden-note">아카이브·삭제 {hiddenCount}개 숨김</div>
+          )}
+        </>
+      )}
+    </li>
+  );
+}
+
 export function Sidebar({
   repos,
   worktrees,
   dirtyCounts,
+  sessionsByDir,
   selectedDir,
   collapsed,
+  showArchived,
   onToggleCollapsed,
+  onToggleArchived,
   onSelect,
   onAdd,
   onRemove,
 }: SidebarProps): JSX.Element {
+  const [expanded, setExpanded] = useState<Set<string>>(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(EXPANDED_KEY) ?? "[]") as string[]);
+    } catch {
+      return new Set();
+    }
+  });
+
+  const toggleExpand = useCallback((path: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      localStorage.setItem(EXPANDED_KEY, JSON.stringify([...next]));
+      return next;
+    });
+  }, []);
+
   return (
     <aside className={`sidebar${collapsed ? " collapsed" : ""}`}>
       {!collapsed && (
         <>
           <div className="sidebar-header">
             <span className="sidebar-title">저장소</span>
-            <button type="button" className="icon-button" title="저장소 추가" onClick={onAdd}>
-              ＋
-            </button>
+            <div className="sidebar-header-actions">
+              <button
+                type="button"
+                className={`icon-button small${showArchived ? " active" : ""}`}
+                title={showArchived ? "아카이브·삭제 세션 숨기기" : "아카이브·삭제 세션 표시"}
+                aria-pressed={showArchived}
+                onClick={onToggleArchived}
+              >
+                🗄
+              </button>
+              <button type="button" className="icon-button" title="저장소 추가" onClick={onAdd}>
+                ＋
+              </button>
+            </div>
           </div>
           <div className="sidebar-body">
             {repos.length === 0 && (
@@ -85,23 +186,19 @@ export function Sidebar({
                 <ul className="worktree-list">
                   {(worktrees[repo.path] ?? [])
                     .filter((worktree) => !worktree.bare)
-                    .map((worktree) => {
-                      const dirty = dirtyCounts[worktree.path] ?? 0;
-                      return (
-                        <li key={worktree.path}>
-                          <button
-                            type="button"
-                            className={`worktree-item${selectedDir === worktree.path ? " selected" : ""}`}
-                            title={worktree.path}
-                            onClick={() => onSelect(worktree.path)}
-                          >
-                            <BranchIcon />
-                            <span className="name">{worktreeLabel(worktree)}</span>
-                            {dirty > 0 && <span className="dirty">{dirty}</span>}
-                          </button>
-                        </li>
-                      );
-                    })}
+                    .map((worktree) => (
+                      <Worktree
+                        key={worktree.path}
+                        worktree={worktree}
+                        dirty={dirtyCounts[worktree.path] ?? 0}
+                        sessions={sessionsByDir[worktree.path] ?? []}
+                        selected={selectedDir === worktree.path}
+                        expanded={expanded.has(worktree.path)}
+                        showArchived={showArchived}
+                        onSelect={() => onSelect(worktree.path)}
+                        onToggleExpand={() => toggleExpand(worktree.path)}
+                      />
+                    ))}
                 </ul>
               </div>
             ))}

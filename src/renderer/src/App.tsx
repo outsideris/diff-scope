@@ -1,21 +1,28 @@
 import { type JSX, useCallback, useEffect, useState } from "react";
 import type { RepositoryEntry, Worktree } from "../../shared/git";
+import type { SessionInfo } from "../../shared/session";
 import { HistoryView } from "./components/HistoryView";
 import { Sidebar } from "./components/Sidebar";
 import { WorkingView } from "./components/WorkingView";
 import { shortenPath } from "./lib/format";
+import { groupSessionsByDir } from "./lib/session";
 
 type ViewKind = "working" | "history";
 
 const SIDEBAR_COLLAPSED_KEY = "diff-scope:sidebar-collapsed";
+const SHOW_ARCHIVED_KEY = "diff-scope:show-archived-sessions";
 
 export function App(): JSX.Element {
   const [repos, setRepos] = useState<RepositoryEntry[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true",
   );
+  const [showArchived, setShowArchived] = useState(
+    () => localStorage.getItem(SHOW_ARCHIVED_KEY) === "true",
+  );
   const [worktrees, setWorktrees] = useState<Record<string, Worktree[]>>({});
   const [dirtyCounts, setDirtyCounts] = useState<Record<string, number>>({});
+  const [sessionsByDir, setSessionsByDir] = useState<Record<string, SessionInfo[]>>({});
   const [selectedDir, setSelectedDir] = useState<string | null>(null);
   const [view, setView] = useState<ViewKind>("working");
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +64,13 @@ export function App(): JSX.Element {
       }),
     );
     setDirtyCounts(Object.fromEntries(counts));
+
+    try {
+      const sessions = await window.diffScope.getSessions(dirs);
+      setSessionsByDir(groupSessionsByDir(sessions));
+    } catch {
+      setSessionsByDir({});
+    }
   }, []);
 
   const refreshRepos = useCallback(
@@ -102,6 +116,13 @@ export function App(): JSX.Element {
     });
   }, []);
 
+  const toggleArchived = useCallback(() => {
+    setShowArchived((prev) => {
+      localStorage.setItem(SHOW_ARCHIVED_KEY, String(!prev));
+      return !prev;
+    });
+  }, []);
+
   const removeRepository = useCallback(
     async (repoPath: string) => {
       const list = await window.diffScope.removeRepository(repoPath);
@@ -134,9 +155,12 @@ export function App(): JSX.Element {
         repos={repos}
         worktrees={worktrees}
         dirtyCounts={dirtyCounts}
+        sessionsByDir={sessionsByDir}
         selectedDir={selectedDir}
         collapsed={sidebarCollapsed}
+        showArchived={showArchived}
         onToggleCollapsed={toggleSidebar}
+        onToggleArchived={toggleArchived}
         onSelect={setSelectedDir}
         onAdd={addRepository}
         onRemove={removeRepository}

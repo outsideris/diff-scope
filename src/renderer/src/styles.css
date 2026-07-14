@@ -159,15 +159,44 @@ code {
   gap: 1px;
 }
 
+.worktree-entry {
+  display: flex;
+  flex-direction: column;
+}
+
+.worktree-row {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.disclosure {
+  flex-shrink: 0;
+  width: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  color: var(--faint);
+  font-size: 9px;
+}
+
+.disclosure:not(.empty):hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+
+.disclosure.empty {
+  cursor: default;
+}
+
 .worktree-item {
   display: flex;
   align-items: center;
   gap: 7px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   text-align: left;
   padding: 4px 8px;
-  margin-left: 10px;
-  width: calc(100% - 10px);
   border-radius: 7px;
   color: var(--subtle);
   font-size: 12.5px;
@@ -212,6 +241,148 @@ code {
 
 .worktree-item.selected .dirty {
   background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: var(--accent-ink);
+}
+
+.worktree-item .session-count {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--faint);
+}
+
+.worktree-item .running-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--added);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--added) 25%, transparent);
+}
+
+/* ---------- Session list ---------- */
+
+.session-list {
+  list-style: none;
+  margin: 1px 0 4px;
+  padding: 0 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.session-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 6px;
+  border-left: 2px solid var(--border-soft);
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--subtle);
+}
+
+.session-item.dimmed {
+  opacity: 0.62;
+}
+
+.session-item.state-deleted .session-title {
+  text-decoration: line-through;
+}
+
+.session-app {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+}
+
+.session-app.app-claude {
+  color: #d97757;
+  background: color-mix(in srgb, #d97757 15%, transparent);
+}
+
+.session-app.app-codex {
+  color: #10a37f;
+  background: color-mix(in srgb, #10a37f 15%, transparent);
+}
+
+.session-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--added);
+}
+
+.session-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.session-item.dimmed .session-title {
+  color: var(--subtle);
+}
+
+.session-meta {
+  flex-shrink: 0;
+}
+
+.session-time {
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.session-badge {
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.session-badge.running {
+  color: var(--added);
+  background: color-mix(in srgb, var(--added) 15%, transparent);
+}
+
+.session-badge.archived {
+  color: var(--faint);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.session-badge.deleted {
+  color: var(--deleted);
+  background: color-mix(in srgb, var(--deleted) 12%, transparent);
+}
+
+.session-hidden-note {
+  padding: 2px 8px 4px 30px;
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.sidebar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.icon-button.small {
+  font-size: 12px;
+  padding: 2px 5px;
+}
+
+.icon-button.small.active {
+  background: var(--accent-soft);
   color: var(--accent-ink);
 }
 

@@ -30,6 +30,13 @@
 - [x] 커밋 히스토리 탐색 화면 (커밋 목록 + 커밋 상세 + diff)
 - [x] diff 뷰 (unified/split 전환, Shiki 문법 강조, 라이트/다크 테마)
 
+## Phase 5: 워크트리 연결 세션 표시 — [계획](plan/phase-5-sessions.md) ✅
+
+- [x] 세션 데이터 계층 (Claude 데스크톱 저장소·실행 중·전사, Codex 롤아웃 스캔·병합)
+- [x] 세션 상태 판정 (실행 중 / 활성 / 아카이브 / 삭제)
+- [x] `getSessions(worktreePaths)` IPC
+- [x] 사이드바 세션 목록 UI (앱 아이콘, 상태, 제목, 시간, 아카이브 토글)
+
 ## Phase 4 후보 (미정)
 
 - [ ] 파일 시스템 감시 기반 자동 새로고침
