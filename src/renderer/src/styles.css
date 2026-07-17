@@ -370,6 +370,21 @@ code {
   color: var(--faint);
 }
 
+/* Working 뷰 목록 패널 하단의 세션 섹션 */
+.session-section {
+  border-top: 1px solid var(--border-soft);
+  margin-top: 6px;
+}
+
+.session-section .session-list {
+  padding-left: 8px;
+  margin: 2px 0 6px;
+}
+
+.session-section .session-hidden-note {
+  padding-left: 22px;
+}
+
 .sidebar-header-actions {
   display: flex;
   align-items: center;

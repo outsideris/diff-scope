@@ -203,7 +203,11 @@ export function App(): JSX.Element {
             <p>왼쪽에서 저장소를 추가하고 워크트리를 선택하세요.</p>
           </div>
         ) : view === "working" ? (
-          <WorkingView dir={selectedDir} />
+          <WorkingView
+            dir={selectedDir}
+            sessions={sessionsByDir[selectedDir] ?? []}
+            showArchived={showArchived}
+          />
         ) : (
           <HistoryView dir={selectedDir} />
         )}

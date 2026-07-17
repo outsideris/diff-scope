@@ -1,9 +1,12 @@
 import { type JSX, useEffect, useMemo, useState } from "react";
 import type { NumstatEntry, RepoStatus } from "../../../shared/git";
+import type { SessionInfo } from "../../../shared/session";
 import { splitPath } from "../lib/format";
+import { isDimmed } from "../lib/session";
 import { groupStatusEntries, type WorkingFile } from "../lib/status";
 import { useAsync } from "../lib/useAsync";
 import { DiffPane } from "./DiffPane";
+import { SessionList } from "./SessionList";
 
 interface Selection {
   path: string;
@@ -86,7 +89,15 @@ function FileList({
   );
 }
 
-export function WorkingView({ dir }: { dir: string }): JSX.Element {
+export function WorkingView({
+  dir,
+  sessions,
+  showArchived,
+}: {
+  dir: string;
+  sessions: SessionInfo[];
+  showArchived: boolean;
+}): JSX.Element {
   const working = useAsync<WorkingData>(async () => {
     const [status, unstagedStats, stagedStats] = await Promise.all([
       window.diffScope.getStatus(dir),
@@ -131,6 +142,9 @@ export function WorkingView({ dir }: { dir: string }): JSX.Element {
     });
   }, [dir, selection]);
 
+  const visibleSessions = showArchived ? sessions : sessions.filter((s) => !isDimmed(s.state));
+  const hiddenSessionCount = sessions.length - visibleSessions.length;
+
   const status = working.data?.status ?? null;
   const branchInfo = status
     ? `${status.detached ? "detached HEAD" : (status.branch ?? "?")}` +
@@ -165,6 +179,16 @@ export function WorkingView({ dir }: { dir: string }): JSX.Element {
           selection={selection}
           onSelect={setSelection}
         />
+        <div className="file-section session-section">
+          <div className="file-section-title">
+            Sessions <span className="count">{sessions.length}</span>
+          </div>
+          {visibleSessions.length === 0 && <div className="file-section-empty">없음</div>}
+          {visibleSessions.length > 0 && <SessionList sessions={visibleSessions} />}
+          {!showArchived && hiddenSessionCount > 0 && (
+            <div className="session-hidden-note">아카이브·삭제 {hiddenSessionCount}개 숨김</div>
+          )}
+        </div>
       </section>
       {diff.error ? (
         <div className="diff-pane empty">{diff.error}</div>

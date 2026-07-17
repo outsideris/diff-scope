@@ -57,6 +57,7 @@ src/main/sessions/collect.ts      # collectSessionsForWorktrees(paths) 오케스
 - 데이터 계층(`src/main/sessions/`)과 사이드바 UI를 모두 구현했다. 실제 로컬 파일 대상 화면 검증 완료.
 - **검증 결과**: 등록된 저장소(diff-scope, pulsebus, PodTrans, agent-engineering-history)의 워크트리별로 세션이 표시됨. 실행 중 세션 3개(diff-scope의 이 세션, PodTrans, right-rail 워크트리)가 모두 초록 점 + "실행 중" 배지로 감지됨. 아카이브 세션은 흐리게 + "아카이브" 배지, 활성은 밝게, Codex는 ○ 초록 / Claude는 ★ 주황으로 구분됨.
 - 워크트리 행에 실행 중 점 + 세션 개수 배지(접힘 상태에서도 보임), 펼치면 세션 목록. 사이드바 헤더의 🗄 토글로 아카이브·삭제 표시/숨김(기본 숨김, "N개 숨김" 안내). 펼침 상태와 토글은 localStorage.
+- **Working 뷰 세션 패널** (2026-07-15 추가): 워크트리 선택 시 Staged/Changes 아래에 SESSIONS 섹션으로 해당 워크트리의 세션(앱 아이콘·상태·제목·시간)을 표시한다. 아카이브 토글을 공유하며 `SessionList` 컴포넌트를 재사용한다.
 - Codex는 아카이브/삭제/실행 개념이 없어 항상 active로 표시(스코프 제한).
 
 ## 열린 질문 / 비고
