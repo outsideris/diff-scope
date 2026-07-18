@@ -42,6 +42,6 @@
 - [ ] 파일 시스템 감시 기반 자동 새로고침
 - [ ] 대용량 diff 렌더링 성능 (가상 스크롤, 지연 렌더링)
 - [ ] 브랜치/태그 선택 후 히스토리 조회, 커밋 범위 비교
-- [ ] dmg 패키징 (electron-builder)
+- [x] dmg 패키징 (electron-builder) — 2026-07-19 완료, `npm run package`
 
 각 Phase를 시작할 때 `docs/plan/`에 상세 계획 문서를 만들고 여기에 링크한다.

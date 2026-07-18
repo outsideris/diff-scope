@@ -1,0 +1,21 @@
+# DiffScope 패키징 설정 (macOS)
+appId: kr.ne.outsider.diffscope
+productName: DiffScope
+directories:
+  output: release
+afterPack: ./scripts/adhoc-sign.cjs
+files:
+  - out/**/*
+  - package.json
+mac:
+  target:
+    - target: dmg
+      arch: [arm64]
+    - target: zip
+      arch: [arm64]
+  icon: resources/icon.icns
+  category: public.app-category.developer-tools
+  # 서명 인증서가 없으므로 ad-hoc 서명 (다른 Mac에서는 우클릭 → 열기 필요)
+dmg:
+  title: DiffScope
+npmRebuild: false

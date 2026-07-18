@@ -28,7 +28,23 @@ Claude Code, ChatGPT 같은 코딩 에이전트로 작업하다 보면 여러 �
 npm install        # 의존성 설치
 npm run dev        # 개발 모드로 앱 실행
 npm run build      # 프로덕션 빌드 (out/)
+npm run package    # DiffScope.app + dmg/zip 패키징 (release/)
 ```
+
+## 설치 / 배포
+
+`npm run package`가 `release/`에 다음을 생성한다 (Apple Silicon):
+
+- `release/mac-arm64/DiffScope.app` — 바로 실행 가능한 앱 (로컬 설치는 이 번들을 `/Applications`로 복사)
+- `release/DiffScope-<버전>-arm64.dmg` — 다른 Mac에 배포용
+- `release/DiffScope-<버전>-arm64-mac.zip` — 압축 배포용
+
+코드 서명 인증서 없이 **ad-hoc 서명**으로 빌드되므로, 다른 Mac에서 처음 열 때는
+Gatekeeper 경고가 나온다. **앱을 우클릭 → 열기**로 한 번 통과시키거나 터미널에서
+`xattr -dr com.apple.quarantine /Applications/DiffScope.app`를 실행한다.
+
+앱 이름은 DiffScope이지만 설정 저장 경로는 개발 모드와 동일하게
+`~/Library/Application Support/diff-scope/`를 사용하므로 등록한 저장소 목록이 이어진다.
 
 ## 검증
 

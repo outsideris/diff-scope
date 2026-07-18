@@ -12,6 +12,7 @@
 ## 선택 확인 항목
 
 - [ ] E2E 테스트: (도입 시 기록)
+- [ ] 패키징: `npm run package` 후 `release/mac-arm64/DiffScope.app` 실행 확인 (패키징 관련 변경 시)
 
 ## 면제 조건
 

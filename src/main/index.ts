@@ -21,6 +21,10 @@ function createWindow(): void {
   }
 }
 
+// userData 경로를 dev(diff-scope 이름)와 패키징(DiffScope 이름) 양쪽에서 동일하게 유지해
+// 등록된 저장소 목록(repositories.json)이 이어지도록 한다.
+app.setName("diff-scope");
+
 app.whenReady().then(() => {
   // 개발 실행에서도 Dock에 앱 아이콘을 표시한다 (패키징 시에는 icns가 대신한다)
   if (process.platform === "darwin") {

@@ -78,6 +78,12 @@ src/renderer/src/lib/        # 순수 로직: parseDiff(diff 섹션 분할), sta
 - git 바인딩 라이브러리(nodegit 등)를 쓰지 않는다. 이유는 [DESIGN.md](DESIGN.md)의 의사결정 참고.
 - 외부 네트워크 의존성이 없다. 로컬 파일시스템과 git CLI만 사용한다.
 
+## 배포
+
+- `npm run package` → electron-vite 빌드 후 electron-builder(`electron-builder.yml`)가 `release/`에 DiffScope.app·dmg·zip 생성 (arm64).
+- 서명 인증서가 없어 `scripts/adhoc-sign.cjs`(afterPack 훅)로 번들 전체를 ad-hoc 서명한다.
+- `app.setName("diff-scope")`로 dev/패키징의 userData 경로를 동일하게 유지한다.
+
 ## 외부 의존성
 
 - 시스템에 설치된 `git` 실행 파일 (필수)
