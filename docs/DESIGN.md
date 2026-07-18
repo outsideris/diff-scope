@@ -53,6 +53,13 @@ libgit2 바인딩(nodegit)이나 isomorphic-git 대신 **git CLI를 직접 실�
   - 워크트리 아래(사이드바)와 Working 뷰의 Staged/Changes 아래(SESSIONS 섹션)에 연결된 에이전트 세션(Claude/Codex)을 표시한다. 앱은 실제 브랜드 로고 아이콘(Claude 스타버스트 주황 `#d97757`, OpenAI 블로섬은 관례대로 흰 배경 + 검정)으로 구분하고, 상태는 실행 중(초록 점+배지)·활성(밝게)·아카이브(흐리게+배지)·삭제(취소선+배지)로 나타낸다. 이 앱 색은 액센트/의미색과 별개인 앱 구분 마커다.
   - 툴바는 `…/부모/저장소명` 축약 경로 + 브랜치 모노 칩.
 
+### 앱 아이콘: "청크" 안 채택 (2026-07-18)
+
+4가지 시안(A 레티클 / B 청크 / C 워크트리 / D 컴페어) 중 **B안 청크**를 채택했다. 밝은 그라파이트 바탕 위에 diff hunk 그 자체 — +초록/−빨강 두 줄과 회색 컨텍스트 라인. 요소가 가장 적어 작은 크기에서도 즉시 읽힌다.
+
+- 원본은 `resources/icon.svg`(1024px), 여기서 `icon.png`(1024)와 `icon.icns`(iconutil 세트)를 생성한다.
+- 개발 실행에서는 `app.dock.setIcon`으로 표시하고, 패키징 도입 시 electron-builder에 icns를 연결한다.
+
 ### diff 렌더링: @git-diff-view/react + Shiki (2026-07-11)
 
 GitHub과 거의 동일한 diff UI(unified/split, word-diff, 컨텍스트 확장)를 제공하는 것이 목적인 라이브러리라 요구사항과 정확히 맞는다. 문법 강조는 Shiki를 연동한다. 문제가 생기면 `react-diff-view`, Monaco diff editor가 대안이다.

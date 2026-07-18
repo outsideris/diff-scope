@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { app, BrowserWindow } from "electron";
 import { registerIpcHandlers } from "./ipc";
@@ -21,6 +22,12 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // 개발 실행에서도 Dock에 앱 아이콘을 표시한다 (패키징 시에는 icns가 대신한다)
+  if (process.platform === "darwin") {
+    const iconPath = join(__dirname, "../../resources/icon.png");
+    if (existsSync(iconPath)) app.dock?.setIcon(iconPath);
+  }
+
   const store = new RepositoryStore(join(app.getPath("userData"), "repositories.json"));
   registerIpcHandlers(store);
   createWindow();
