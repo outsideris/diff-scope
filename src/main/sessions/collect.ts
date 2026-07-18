@@ -1,6 +1,6 @@
 import type { SessionInfo } from "../../shared/session";
 import { readClaudeStore } from "./claudeStore";
-import { readCodexSessions } from "./codex";
+import { findOpenRollouts, readCodexSessions } from "./codex";
 import { normalizePath } from "./encode";
 import { readRunningSessions } from "./running";
 import { resolveState } from "./state";
@@ -71,14 +71,21 @@ export async function collectSessions(worktreePaths: string[]): Promise<SessionI
     }
   }
 
-  // 3) Codex 세션
+  // 3) Codex 세션 — 실행 중은 프로세스가 열어 둔 rollout 파일로 감지
+  const openRollouts = await findOpenRollouts(
+    codex.filter((session) => !session.archived).map((session) => session.filePath),
+  );
   for (const session of codex) {
     if (sessions.has(session.id)) continue;
     sessions.set(session.id, {
       id: session.id,
       app: "codex",
       title: session.title,
-      state: runningIds.has(session.id) ? "running" : "active",
+      state: openRollouts.has(session.filePath)
+        ? "running"
+        : session.archived
+          ? "archived"
+          : "active",
       cwd: session.cwd,
       branch: null,
       lastActivityAt: session.lastActivityAt,

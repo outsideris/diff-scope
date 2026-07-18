@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseCodexHead } from "./codex";
+import { parseCodexHead, parseLsofOpenPaths, parseSessionIndex } from "./codex";
 
 function line(obj: unknown): string {
   return JSON.stringify(obj);
@@ -63,5 +63,37 @@ describe("parseCodexHead", () => {
       parseCodexHead(line({ type: "event_msg", payload: { type: "task_started" } })),
     ).toBeNull();
     expect(parseCodexHead("")).toBeNull();
+  });
+});
+
+describe("parseSessionIndex", () => {
+  it("maps session ids to thread names and updated times, skipping bad lines", () => {
+    const raw = [
+      line({ id: "a", thread_name: "새 모델 비용 계산", updated_at: "2026-07-12T07:24:12.902Z" }),
+      line({ id: "b", updated_at: "2026-07-17T09:42:22.846Z" }),
+      "not json",
+      line({ thread_name: "id 없음" }),
+    ].join("\n");
+
+    const index = parseSessionIndex(raw);
+
+    expect(index.get("a")).toEqual({
+      title: "새 모델 비용 계산",
+      updatedAt: Date.parse("2026-07-12T07:24:12.902Z"),
+    });
+    expect(index.get("b")).toEqual({
+      title: "(제목 없음)",
+      updatedAt: Date.parse("2026-07-17T09:42:22.846Z"),
+    });
+    expect(index.size).toBe(2);
+  });
+});
+
+describe("parseLsofOpenPaths", () => {
+  it("collects only the n-prefixed path lines", () => {
+    const output = ["p33348", "f21", "n/a/open-1.jsonl", "f23", "n/a/open-2.jsonl", ""].join("\n");
+
+    expect(parseLsofOpenPaths(output)).toEqual(new Set(["/a/open-1.jsonl", "/a/open-2.jsonl"]));
+    expect(parseLsofOpenPaths("")).toEqual(new Set());
   });
 });

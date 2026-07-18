@@ -1,3 +1,4 @@
+import { execFile } from "node:child_process";
 import { readdir, readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -10,10 +11,20 @@ export interface CodexSession {
   cwd: string;
   title: string;
   lastActivityAt: number | null;
+  /** rollout 파일 경로 (실행 중 감지에 사용) */
+  filePath: string;
+  /** archived_sessions 디렉토리에 있는 세션 */
+  archived: boolean;
 }
 
-export function codexSessionsDir(): string {
-  return join(homedir(), ".codex", "sessions");
+/** session_index.jsonl 항목: 세션 제목과 최근 활동 */
+export interface CodexIndexEntry {
+  title: string;
+  updatedAt: number | null;
+}
+
+export function codexDir(): string {
+  return join(homedir(), ".codex");
 }
 
 /**
@@ -21,7 +32,7 @@ export function codexSessionsDir(): string {
  * 첫 줄은 `session_meta`(cwd, id), 제목은 `<...>`로 시작하지 않는
  * 첫 user 메시지에서 유추한다. cwd/id 없으면 null.
  */
-export function parseCodexHead(head: string): CodexSession | null {
+export function parseCodexHead(head: string): Omit<CodexSession, "filePath" | "archived"> | null {
   const lines = head.split("\n");
   let meta: { id: string; cwd: string; ts: number | null } | null = null;
 
@@ -56,7 +67,55 @@ export function parseCodexHead(head: string): CodexSession | null {
   return null;
 }
 
-/** `<recommended_plugins>` 같은 시스템 프리앰블을 건너뛰고 실제 첫 프롬프트를 찾는다. */
+/** `~/.codex/session_index.jsonl`을 id → {제목, 최근 활동} 맵으로 파싱한다. */
+export function parseSessionIndex(raw: string): Map<string, CodexIndexEntry> {
+  const index = new Map<string, CodexIndexEntry>();
+  for (const line of raw.split("\n")) {
+    if (!line.trim()) continue;
+    let data: Record<string, unknown>;
+    try {
+      data = JSON.parse(line) as Record<string, unknown>;
+    } catch {
+      continue;
+    }
+    if (typeof data.id !== "string") continue;
+    const title =
+      typeof data.thread_name === "string" && data.thread_name ? data.thread_name : null;
+    const updatedAt = parseTimestamp(data.updated_at);
+    if (title || updatedAt !== null) {
+      index.set(data.id, { title: title ?? "(제목 없음)", updatedAt });
+    }
+  }
+  return index;
+}
+
+/**
+ * `lsof -Fn -- <files>` 출력에서 열려 있는 파일 경로 집합을 뽑는다.
+ * (열린 파일은 `n<경로>` 라인으로 나온다)
+ */
+export function parseLsofOpenPaths(output: string): Set<string> {
+  const open = new Set<string>();
+  for (const line of output.split("\n")) {
+    if (line.startsWith("n")) open.add(line.slice(1));
+  }
+  return open;
+}
+
+/**
+ * 주어진 rollout 파일 중 프로세스가 열어 둔(=세션 실행 중) 파일 집합을 반환한다.
+ * lsof가 없거나 실패하면 빈 집합 (실행 중 표시만 빠질 뿐 동작에는 지장 없음).
+ */
+export function findOpenRollouts(paths: string[]): Promise<Set<string>> {
+  if (paths.length === 0) return Promise.resolve(new Set());
+  return new Promise((resolve) => {
+    // 일부 파일만 열려 있으면 lsof가 exit 1을 반환하므로 stdout만 본다.
+    execFile("lsof", ["-Fn", "--", ...paths], { maxBuffer: 4 * 1024 * 1024 }, (_error, stdout) => {
+      resolve(parseLsofOpenPaths(stdout ?? ""));
+    });
+  });
+}
+
+/** `<태그>` 시스템 프리앰블을 건너뛰고 실제 첫 프롬프트를 찾는다. */
 function firstUserText(content: unknown): string | null {
   if (!Array.isArray(content)) return null;
   for (const block of content) {
@@ -83,23 +142,53 @@ function parseTimestamp(value: unknown): number | null {
   return Number.isNaN(ms) ? null : ms;
 }
 
-/** Codex 세션 저장소를 훑어 cwd가 `cwds`에 속하는 세션만 반환한다. */
+/**
+ * Codex 세션 저장소(`sessions/` + `archived_sessions/`)를 훑어
+ * cwd가 `cwds`에 속하는 세션만 반환한다. session_index의 제목·시간이 있으면 우선한다.
+ */
 export async function readCodexSessions(
   cwds: Set<string>,
-  dir = codexSessionsDir(),
+  baseDir = codexDir(),
 ): Promise<CodexSession[]> {
+  const index = await readSessionIndex(baseDir);
+
+  const files: Array<{ path: string; archived: boolean }> = [
+    ...(await walkRollouts(join(baseDir, "sessions"))).map((path) => ({ path, archived: false })),
+    ...(await listRollouts(join(baseDir, "archived_sessions"))).map((path) => ({
+      path,
+      archived: true,
+    })),
+  ];
+
   const sessions: CodexSession[] = [];
-  for (const file of await walkRollouts(dir)) {
-    let session: CodexSession | null;
+  for (const file of files) {
+    let head: Omit<CodexSession, "filePath" | "archived"> | null;
     try {
-      const buffer = await readFile(file);
-      session = parseCodexHead(buffer.subarray(0, HEAD_BYTES).toString("utf8"));
+      const buffer = await readFile(file.path);
+      head = parseCodexHead(buffer.subarray(0, HEAD_BYTES).toString("utf8"));
     } catch {
       continue;
     }
-    if (session && cwds.has(session.cwd)) sessions.push(session);
+    if (!head || !cwds.has(head.cwd)) continue;
+
+    const indexed = index.get(head.id);
+    sessions.push({
+      ...head,
+      title: indexed?.title ?? head.title,
+      lastActivityAt: indexed?.updatedAt ?? head.lastActivityAt,
+      filePath: file.path,
+      archived: file.archived,
+    });
   }
   return sessions;
+}
+
+async function readSessionIndex(baseDir: string): Promise<Map<string, CodexIndexEntry>> {
+  try {
+    return parseSessionIndex(await readFile(join(baseDir, "session_index.jsonl"), "utf8"));
+  } catch {
+    return new Map();
+  }
 }
 
 /** `<dir>/YYYY/MM/DD/rollout-*.jsonl`을 모두 찾는다. */
@@ -126,5 +215,17 @@ async function walkRollouts(dir: string): Promise<string[]> {
     for (const entry of entries) {
       await collect(join(current, entry), depth + 1);
     }
+  }
+}
+
+/** 평평한 디렉토리의 rollout 파일 목록 (archived_sessions) */
+async function listRollouts(dir: string): Promise<string[]> {
+  try {
+    const entries = await readdir(dir);
+    return entries
+      .filter((entry) => entry.startsWith("rollout-") && entry.endsWith(".jsonl"))
+      .map((entry) => join(dir, entry));
+  } catch {
+    return [];
   }
 }

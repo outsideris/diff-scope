@@ -28,7 +28,7 @@ Vitest, node 환경, `src/**/*.test.ts` 패턴.
 | `src/main/sessions/state.test.ts`        | `resolveState`                                                  | running > deleted > archived > active 우선순위 판정                                                                                        |
 | `src/main/sessions/running.test.ts`      | `parseRunningSession`                                           | pid 파일 파싱, cwd/entrypoint 기본값, 필수 필드/잘못된 JSON 시 null                                                                        |
 | `src/main/sessions/claudeStore.test.ts`  | `parseClaudeMeta`                                               | 데스크톱 세션 메타 파싱(isArchived 문자열, lastActivity/createdAt fallback, 빈 branch→null), cliSessionId 없으면 null                      |
-| `src/main/sessions/codex.test.ts`        | `parseCodexHead`                                                | session_meta의 cwd/id, `<태그>` 프리앰블 건너뛴 첫 user 제목, 기본 제목, meta 없으면 null                                                  |
+| `src/main/sessions/codex.test.ts`        | `parseCodexHead`, `parseSessionIndex`, `parseLsofOpenPaths`     | rollout head 파싱(cwd/id/제목), session_index의 thread_name·updated_at 맵(불량 라인 무시), lsof n-라인 추출                                |
 | `src/main/sessions/transcripts.test.ts`  | `deriveTitle`                                                   | 첫 user 텍스트 메시지 제목(첫 줄·트림), 문자열 content, tool_result 건너뜀, 없으면 null                                                    |
 | `src/renderer/src/lib/session.test.ts`   | `groupSessionsByDir`, `countSessions`, `stateLabel`, `isDimmed` | cwd별 그룹핑(끝 슬래시 무시), total/running/live 카운트, 상태 한글 라벨, 아카이브/삭제 dim 판정                                            |
 

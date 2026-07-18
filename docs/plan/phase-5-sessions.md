@@ -58,11 +58,18 @@ src/main/sessions/collect.ts      # collectSessionsForWorktrees(paths) 오케스
 - **검증 결과**: 등록된 저장소(diff-scope, pulsebus, PodTrans, agent-engineering-history)의 워크트리별로 세션이 표시됨. 실행 중 세션 3개(diff-scope의 이 세션, PodTrans, right-rail 워크트리)가 모두 초록 점 + "실행 중" 배지로 감지됨. 아카이브 세션은 흐리게 + "아카이브" 배지, 활성은 밝게, Codex는 ○ 초록 / Claude는 ★ 주황으로 구분됨.
 - 워크트리 행에 실행 중 점 + 세션 개수 배지(접힘 상태에서도 보임), 펼치면 세션 목록. 사이드바 헤더의 🗄 토글로 아카이브·삭제 표시/숨김(기본 숨김, "N개 숨김" 안내). 펼침 상태와 토글은 localStorage.
 - **Working 뷰 세션 패널** (2026-07-15 추가): 워크트리 선택 시 Staged/Changes 아래에 SESSIONS 섹션으로 해당 워크트리의 세션(앱 아이콘·상태·제목·시간)을 표시한다. 아카이브 토글을 공유하며 `SessionList` 컴포넌트를 재사용한다.
-- Codex는 아카이브/삭제/실행 개념이 없어 항상 active로 표시(스코프 제한).
+- ~~Codex는 아카이브/삭제/실행 개념이 없어 항상 active로 표시(스코프 제한)~~ → 2026-07-18 해소: 아래 참조.
+
+## Codex 실행 중·아카이브 감지 (2026-07-18 추가)
+
+- **실행 중**: `codex` 프로세스가 열어 둔 rollout 파일을 `lsof -Fn`으로 감지한다 (등록 워크트리에 매칭된 비아카이브 세션 파일만 대상이라 빠름). lsof 실패/부재 시 빈 집합으로 조용히 강등.
+- **아카이브**: `~/.codex/archived_sessions/`의 rollout은 archived 상태로 표시.
+- **제목·최근 활동**: `~/.codex/session_index.jsonl`의 `thread_name`/`updated_at`이 있으면 첫 프롬프트 유추보다 우선한다.
+- **앱 아이콘**: 별표·동그라미 대신 실제 브랜드 로고 사용 — Claude 스타버스트(simple-icons), OpenAI 블로섬(lobehub icons), 24x24 path 인라인.
 
 ## 열린 질문 / 비고
 
 - ChatGPT 데스크톱 앱: 대화가 로컬에 없어 연결 불가 — 범위 제외.
 - 세션 클릭 시 동작(재개 명령 복사/터미널 열기)은 후속 작업 후보.
 - 세션 스캔 결과 캐시와 새로고침 주기(현재는 저장소 새로고침 시 재스캔).
-- Codex 실행 중 감지 미지원.
+- ~~Codex 실행 중 감지 미지원~~ → 2026-07-18 lsof 방식으로 해결.
