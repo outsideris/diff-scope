@@ -1,4 +1,4 @@
-import { type JSX, useCallback, useEffect, useState } from "react";
+import { type JSX, useCallback, useEffect, useRef, useState } from "react";
 import type { RepositoryEntry, Worktree } from "../../shared/git";
 import type { SessionInfo } from "../../shared/session";
 import { HistoryView } from "./components/HistoryView";
@@ -11,6 +11,8 @@ type ViewKind = "working" | "history";
 
 const SIDEBAR_COLLAPSED_KEY = "diff-scope:sidebar-collapsed";
 const SHOW_ARCHIVED_KEY = "diff-scope:show-archived-sessions";
+/** 사이드바(워크트리·dirty 배지·세션) 자동 갱신 주기 */
+const SIDEBAR_POLL_MS = 30_000;
 
 export function App(): JSX.Element {
   const [repos, setRepos] = useState<RepositoryEntry[]>([]);
@@ -93,6 +95,22 @@ export function App(): JSX.Element {
     refreshRepos().then((list) => {
       if (list.length > 0) setSelectedDir((prev) => prev ?? list[0].path);
     });
+  }, [refreshRepos]);
+
+  // 사이드바(워크트리·dirty 배지·세션 상태)를 주기적으로 다시 스캔한다.
+  // 창이 보이지 않는 동안은 건너뛰고, 이전 갱신이 끝나지 않았으면 겹치지 않는다.
+  const polling = useRef(false);
+  useEffect(() => {
+    const id = setInterval(async () => {
+      if (document.hidden || polling.current) return;
+      polling.current = true;
+      try {
+        await refreshRepos();
+      } finally {
+        polling.current = false;
+      }
+    }, SIDEBAR_POLL_MS);
+    return () => clearInterval(id);
   }, [refreshRepos]);
 
   const addRepository = useCallback(async () => {
