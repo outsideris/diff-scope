@@ -49,6 +49,9 @@ export function parseCodexHead(head: string): Omit<CodexSession, "filePath" | "a
 
     if (!meta && data.type === "session_meta") {
       if (typeof payload.id !== "string" || typeof payload.cwd !== "string") return null;
+      // 멀티 에이전트 모드의 서브 에이전트 스레드는 목록에서 제외한다.
+      // (메인 세션은 thread_source가 "user", 서브는 "subagent" + source.subagent)
+      if (isSubagentMeta(payload)) return null;
       meta = {
         id: payload.id,
         cwd: normalizePath(payload.cwd),
@@ -113,6 +116,13 @@ export function findOpenRollouts(paths: string[]): Promise<Set<string>> {
       resolve(parseLsofOpenPaths(stdout ?? ""));
     });
   });
+}
+
+/** 서브 에이전트 스레드인지 판정한다 (thread_source 또는 source.subagent) */
+function isSubagentMeta(payload: Record<string, unknown>): boolean {
+  if (payload.thread_source === "subagent") return true;
+  const source = payload.source;
+  return typeof source === "object" && source !== null && "subagent" in source;
 }
 
 /** `<태그>` 시스템 프리앰블을 건너뛰고 실제 첫 프롬프트를 찾는다. */

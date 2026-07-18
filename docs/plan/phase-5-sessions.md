@@ -65,7 +65,8 @@ src/main/sessions/collect.ts      # collectSessionsForWorktrees(paths) 오케스
 - **실행 중**: `codex` 프로세스가 열어 둔 rollout 파일을 `lsof -Fn`으로 감지한다 (등록 워크트리에 매칭된 비아카이브 세션 파일만 대상이라 빠름). lsof 실패/부재 시 빈 집합으로 조용히 강등.
 - **아카이브**: `~/.codex/archived_sessions/`의 rollout은 archived 상태로 표시.
 - **제목·최근 활동**: `~/.codex/session_index.jsonl`의 `thread_name`/`updated_at`이 있으면 첫 프롬프트 유추보다 우선한다.
-- **앱 아이콘**: 별표·동그라미 대신 실제 브랜드 로고 사용 — Claude 스타버스트(simple-icons), OpenAI 블로섬(lobehub icons), 24x24 path 인라인.
+- **앱 아이콘**: 별표·동그라미 대신 실제 브랜드 로고 사용 — Claude 스타버스트(simple-icons), OpenAI 블로섬(lobehub icons), 24x24 path 인라인. OpenAI 로고는 관례대로 흰 배경 + 검정 (2026-07-18).
+- **서브 에이전트 필터** (2026-07-18): Codex 멀티 에이전트 모드의 서브 스레드(`thread_source: "subagent"` 또는 `source.subagent`)는 목록에서 제외한다. 메인 세션(`thread_source: "user"`)만 표시 — llm-usage 기준 41개 → 10개.
 
 ## 열린 질문 / 비고
 

@@ -307,9 +307,11 @@ code {
   background: color-mix(in srgb, #d97757 15%, transparent);
 }
 
+/* OpenAI 관례대로 흰 배경 + 검정 로고 (라이트에서는 경계용 얇은 보더) */
 .session-app.app-codex {
-  color: #10a37f;
-  background: color-mix(in srgb, #10a37f 15%, transparent);
+  color: #000000;
+  background: #ffffff;
+  border: 1px solid light-dark(var(--border), transparent);
 }
 
 .session-dot {

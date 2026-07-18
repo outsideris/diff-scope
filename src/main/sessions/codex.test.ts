@@ -64,6 +64,29 @@ describe("parseCodexHead", () => {
     ).toBeNull();
     expect(parseCodexHead("")).toBeNull();
   });
+
+  it("excludes subagent threads (thread_source or source.subagent)", () => {
+    const byThreadSource = line({
+      type: "session_meta",
+      payload: { id: "sub-1", cwd: "/Users/me/repo", thread_source: "subagent" },
+    });
+    const bySource = line({
+      type: "session_meta",
+      payload: {
+        id: "sub-2",
+        cwd: "/Users/me/repo",
+        source: { subagent: { thread_spawn: { parent_thread_id: "parent", depth: 1 } } },
+      },
+    });
+    const mainThread = line({
+      type: "session_meta",
+      payload: { id: "main-1", cwd: "/Users/me/repo", thread_source: "user", source: "vscode" },
+    });
+
+    expect(parseCodexHead(byThreadSource)).toBeNull();
+    expect(parseCodexHead(bySource)).toBeNull();
+    expect(parseCodexHead(mainThread)).toMatchObject({ id: "main-1" });
+  });
 });
 
 describe("parseSessionIndex", () => {
