@@ -1,4 +1,5 @@
-import { type JSX, useEffect, useState } from "react";
+import { type JSX, useEffect, useMemo, useState } from "react";
+import type { DiffRevisions } from "../../../shared/git";
 import { relativeDate } from "../lib/format";
 import { useAsync } from "../lib/useAsync";
 import { DiffPane } from "./DiffPane";
@@ -23,6 +24,12 @@ export function HistoryView({ dir }: { dir: string }): JSX.Element {
   }, [dir, selectedHash]);
 
   const selected = log.data?.find((c) => c.hash === selectedHash) ?? null;
+
+  // 커밋 diff는 부모↔커밋을 비교한 것이다. 루트 커밋은 부모가 없어 확장 시 null이 온다.
+  const revisions = useMemo<DiffRevisions>(
+    () => ({ oldRev: selectedHash === null ? null : `${selectedHash}^`, newRev: selectedHash }),
+    [selectedHash],
+  );
 
   return (
     <div className="view">
@@ -70,7 +77,12 @@ export function HistoryView({ dir }: { dir: string }): JSX.Element {
               {selected.body && <pre className="commit-detail-body">{selected.body}</pre>}
             </div>
           )}
-          <DiffPane diff={diff.data ?? ""} emptyMessage="커밋을 선택하세요" />
+          <DiffPane
+            diff={diff.data ?? ""}
+            dir={dir}
+            revisions={revisions}
+            emptyMessage="커밋을 선택하세요"
+          />
         </div>
       )}
     </div>

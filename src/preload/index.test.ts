@@ -45,6 +45,10 @@ describe("preload api", () => {
         () => api.getCommitDiff("/repos/a", "abc123"),
         [IpcChannels.getCommitDiff, "/repos/a", "abc123"],
       ],
+      [
+        () => api.getFileContents("/repos/a", { path: "src/a.ts", rev: "HEAD" }),
+        [IpcChannels.getFileContents, "/repos/a", { path: "src/a.ts", rev: "HEAD" }],
+      ],
       [() => api.getSessions(["/repos/a"]), [IpcChannels.getSessions, ["/repos/a"]]],
     ];
 

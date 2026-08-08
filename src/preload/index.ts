@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type {
   CommitInfo,
+  FileContentsRequest,
   LogOptions,
   NumstatEntry,
   RepositoryEntry,
@@ -34,6 +35,8 @@ const api = {
     ipcRenderer.invoke(IpcChannels.getWorkingNumstat, dir, options),
   getCommitDiff: (dir: string, hash: string): Promise<string> =>
     ipcRenderer.invoke(IpcChannels.getCommitDiff, dir, hash),
+  getFileContents: (dir: string, request: FileContentsRequest): Promise<string | null> =>
+    ipcRenderer.invoke(IpcChannels.getFileContents, dir, request),
   getSessions: (worktreePaths: string[]): Promise<SessionInfo[]> =>
     ipcRenderer.invoke(IpcChannels.getSessions, worktreePaths),
 };

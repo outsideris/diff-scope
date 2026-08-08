@@ -1,7 +1,8 @@
 import { basename } from "node:path";
 import { dialog, ipcMain } from "electron";
-import type { LogOptions, WorkingDiffOptions } from "../shared/git";
+import type { FileContentsRequest, LogOptions, WorkingDiffOptions } from "../shared/git";
 import { IpcChannels } from "../shared/ipc";
+import { getFileContents } from "./git/blob";
 import { getCommitDiff, getWorkingDiff } from "./git/diff";
 import { getLog } from "./git/log";
 import { getWorkingNumstat } from "./git/numstat";
@@ -40,6 +41,9 @@ export function registerIpcHandlers(store: RepositoryStore): void {
   );
   ipcMain.handle(IpcChannels.getCommitDiff, (_event, dir: string, hash: string) =>
     getCommitDiff(dir, hash),
+  );
+  ipcMain.handle(IpcChannels.getFileContents, (_event, dir: string, request: FileContentsRequest) =>
+    getFileContents(dir, request),
   );
 
   ipcMain.handle(IpcChannels.getSessions, (_event, worktreePaths: string[]) =>

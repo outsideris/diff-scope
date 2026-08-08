@@ -10,6 +10,7 @@ export const IpcChannels = {
   getWorkingDiff: "diff-scope:git:working-diff",
   getWorkingNumstat: "diff-scope:git:working-numstat",
   getCommitDiff: "diff-scope:git:commit-diff",
+  getFileContents: "diff-scope:git:file-contents",
   getSessions: "diff-scope:sessions:list",
 } as const;
 

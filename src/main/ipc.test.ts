@@ -13,6 +13,7 @@ const { handle, git } = vi.hoisted(() => ({
     getWorkingDiff: vi.fn(),
     getWorkingNumstat: vi.fn(),
     getCommitDiff: vi.fn(),
+    getFileContents: vi.fn(),
     collectSessions: vi.fn(),
   },
 }));
@@ -30,6 +31,7 @@ vi.mock("./git/diff", () => ({
   getWorkingDiff: git.getWorkingDiff,
   getCommitDiff: git.getCommitDiff,
 }));
+vi.mock("./git/blob", () => ({ getFileContents: git.getFileContents }));
 
 const store = {
   list: vi.fn(),
@@ -97,6 +99,12 @@ describe("registerIpcHandlers", () => {
 
     await handlerFor(IpcChannels.getCommitDiff)(null, "/repos/a", "abc123");
     expect(git.getCommitDiff).toHaveBeenCalledWith("/repos/a", "abc123");
+
+    await handlerFor(IpcChannels.getFileContents)(null, "/repos/a", {
+      path: "src/a.ts",
+      rev: ":0",
+    });
+    expect(git.getFileContents).toHaveBeenCalledWith("/repos/a", { path: "src/a.ts", rev: ":0" });
 
     await handlerFor(IpcChannels.getSessions)(null, ["/repos/a", "/repos/a/wt"]);
     expect(git.collectSessions).toHaveBeenCalledWith(["/repos/a", "/repos/a/wt"]);

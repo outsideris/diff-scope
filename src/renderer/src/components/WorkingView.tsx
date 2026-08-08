@@ -1,5 +1,10 @@
 import { type JSX, useEffect, useMemo, useState } from "react";
-import type { NumstatEntry, RepoStatus } from "../../../shared/git";
+import {
+  type DiffRevisions,
+  INDEX_REV,
+  type NumstatEntry,
+  type RepoStatus,
+} from "../../../shared/git";
 import type { SessionInfo } from "../../../shared/session";
 import { splitPath } from "../lib/format";
 import { isDimmed } from "../lib/session";
@@ -142,6 +147,15 @@ export function WorkingView({
     });
   }, [dir, selection]);
 
+  // staged diff는 HEAD↔인덱스, unstaged diff는 인덱스↔워킹 트리를 비교한 것이다.
+  const revisions = useMemo<DiffRevisions>(
+    () =>
+      selection?.staged
+        ? { oldRev: "HEAD", newRev: INDEX_REV }
+        : { oldRev: INDEX_REV, newRev: null },
+    [selection?.staged],
+  );
+
   const visibleSessions = showArchived ? sessions : sessions.filter((s) => !isDimmed(s.state));
   const hiddenSessionCount = sessions.length - visibleSessions.length;
 
@@ -195,6 +209,8 @@ export function WorkingView({
       ) : (
         <DiffPane
           diff={diff.data ?? ""}
+          dir={dir}
+          revisions={revisions}
           emptyMessage={
             status && grouped.staged.length + grouped.unstaged.length === 0
               ? "변경사항이 없습니다"
