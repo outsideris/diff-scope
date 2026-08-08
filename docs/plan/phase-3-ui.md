@@ -44,6 +44,8 @@
 - 저장소 추가용 `selectDirectory` IPC 채널(`dialog.showOpenDialog`)을 추가했다.
 - 검증: 실제 저장소를 등록해 CDP 스크린샷으로 Working 뷰(staged/changes 목록, 상태 코드), untracked no-index diff, Unified/Split 전환, History 뷰(커밋 목록·상세·15개 파일 diff, word-level 하이라이트), 임시 워크트리를 만들어 워크트리 전환까지 확인했다.
 
+> **2026-08-08 갱신**: diff 렌더러를 `@pierre/diffs`로 교체했다. 위 "배운 것"의 `data.hunks` 주의사항과 `registerHighlighter`, `diffViewTheme`, `lib/lang.ts`는 더 이상 해당하지 않는다. 현재 구조는 [ARCHITECURE.md](../ARCHITECURE.md)의 렌더러 구조와 [DESIGN.md](../DESIGN.md)의 "diff 렌더링 교체" 항목을 참고한다. `FileDiff.raw`를 파일 섹션 전체 원문으로 유지하는 점은 그대로다 — `PatchDiff`도 `diff --git` 헤더를 포함한 원문을 받는다.
+
 ## 열린 질문
 
 - 대용량 diff의 렌더링 성능 — package-lock.json 같은 큰 diff에서 렌더링이 느릴 수 있다 (Phase 4에서 가상 스크롤/지연 렌더링 검토)

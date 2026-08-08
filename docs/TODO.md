@@ -2,7 +2,7 @@
 
 ## Phase 0: 프로젝트 결정 및 문서화
 
-- [x] 기술 스택 결정 (Electron + React + Vite + @git-diff-view/react + Shiki, git CLI) — [DESIGN.md](DESIGN.md)
+- [x] 기술 스택 결정 (Electron + React + Vite + @pierre/diffs, git CLI) — [DESIGN.md](DESIGN.md). 2026-08-08에 diff 렌더러를 `@git-diff-view/react` → `@pierre/diffs`로 교체
 - [x] git 저장소 초기화 및 문서 구조 생성
 
 ## Phase 1: 스캐폴딩 — [계획](plan/phase-1-scaffolding.md) ✅

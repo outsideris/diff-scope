@@ -21,6 +21,13 @@
 
   --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
 
+  /* @pierre/diffs는 shadow DOM 안에서 렌더링하므로 페이지 셀렉터가 닿지 않는다.
+     CSS 커스텀 프로퍼티는 shadow 경계를 넘어 상속되므로 여기서 맞춘다. */
+  --diffs-font-family: var(--mono);
+  --diffs-font-size: 12px;
+  --diffs-line-height: 18px;
+  --diffs-tab-size: 2;
+
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Apple SD Gothic Neo", sans-serif;
   font-size: 13px;

@@ -17,7 +17,7 @@ Electron 앱. 아직 스캐폴딩 전이며, 아래는 결정된 구조 방향�
 │  - 저장소/워크트리 전환 UI                │
 │  - 커밋 히스토리 탐색                     │
 │  - staged/unstaged 파일 목록              │
-│  - diff 뷰 (@git-diff-view/react + Shiki)│
+│  - diff 뷰 (@pierre/diffs)                │
 └─────────────────────────────────────────┘
 ```
 
@@ -27,8 +27,8 @@ Electron 앱. 아직 스캐폴딩 전이며, 아래는 결정된 구조 방향�
 | ----------- | ------------------------------------------ |
 | 셸          | Electron                                   |
 | 프론트엔드  | React + Vite (TypeScript)                  |
-| diff 렌더링 | `@git-diff-view/react`                     |
-| 문법 강조   | Shiki                                      |
+| diff 렌더링 | `@pierre/diffs`                            |
+| 문법 강조   | Shiki (`@pierre/diffs` 내장)               |
 | Git 접근    | git CLI 실행 (`child_process`) + 출력 파싱 |
 | 린트/포맷   | oxlint + oxfmt                             |
 
@@ -50,7 +50,7 @@ src/main/store/repositories.ts  # 저장소 목록 JSON 영속화 (userData/repo
 src/preload/index.ts         # window.diffScope typed API
 src/renderer/src/App.tsx     # 최상위 상태 (저장소/워크트리 선택, Working|History 뷰 전환)
 src/renderer/src/components/ # Sidebar, WorkingView, HistoryView, DiffPane
-src/renderer/src/lib/        # 순수 로직: parseDiff(diff 섹션 분할), status(그룹핑), lang, useAsync
+src/renderer/src/lib/        # 순수 로직: parseDiff(diff 섹션 분할), status(그룹핑), format, session, useAsync
 ```
 
 ## 렌더러 구조
@@ -58,8 +58,10 @@ src/renderer/src/lib/        # 순수 로직: parseDiff(diff 섹션 분할), sta
 - **Sidebar**: 저장소 목록과 각 저장소의 워크트리. `selectDirectory` IPC(macOS 디렉토리 다이얼로그)로 저장소를 추가한다.
 - **WorkingView**: `getStatus` 결과를 Staged / Changes(unstaged+untracked)로 그룹핑(`lib/status.ts`), 파일 선택 시 `getWorkingDiff`로 diff 조회.
 - **HistoryView**: `getLog` 커밋 목록, 선택 시 `getCommitDiff`.
-- **DiffPane**: diff 원문을 `lib/parseDiff.ts`로 파일 섹션 단위로 쪼개 `@git-diff-view/react`의 `DiffView`로 렌더링. Shiki highlighter(`@git-diff-view/shiki`)와 unified/split 전환, 라이트/다크 테마 지원.
-- **주의**: `DiffView`의 `data.hunks`에는 `@@` 이후 텍스트가 아니라 `diff --git` 헤더를 포함한 파일 섹션 전체를 넘겨야 라인이 렌더링된다.
+- **DiffPane**: diff 원문을 `lib/parseDiff.ts`로 파일 섹션 단위로 쪼개, 각 섹션의 원문(`file.raw`)을 `@pierre/diffs`의 `<PatchDiff patch={...}>`에 넘겨 렌더링한다. unified/split 전환은 `options.diffStyle`.
+- **주의**: `PatchDiff`는 내부적으로 `getSingularPatch()`를 써서 patch 하나에서 **파일 하나**를 렌더링한다. 여러 파일은 앱이 쪼개서 컴포넌트를 여러 개 마운트한다.
+- **주의**: `@pierre/diffs`는 **shadow DOM**(`<diffs-container>`) 안에 렌더링한다. 페이지 CSS 셀렉터는 내부에 닿지 않고, `--diffs-*` 커스텀 프로퍼티만 상속으로 넘어간다. 폰트·크기·행간은 `styles.css`의 `:root`에서 지정한다.
+- **주의**: 파일 헤더는 앱이 직접 그리므로 `options.disableFileHeader: true`로 라이브러리 헤더를 끈다. 바이너리 파일은 pierre에 개념이 없어 앱이 `isBinary`로 먼저 걸러낸다.
 
 ## 데이터 흐름
 
@@ -70,7 +72,7 @@ src/renderer/src/lib/        # 순수 로직: parseDiff(diff 섹션 분할), sta
    - 히스토리: `git log` (포맷 지정)
    - diff: `git diff`, `git diff --cached`, `git show`
 3. 출력을 파싱해 구조화된 객체로 렌더러에 반환
-4. 렌더러가 diff 텍스트를 `@git-diff-view/react`로 렌더링
+4. 렌더러가 diff 텍스트를 파일 단위로 쪼개 `@pierre/diffs`로 렌더링
 
 ## 기술적 제약 / 원칙
 

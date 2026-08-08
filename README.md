@@ -14,7 +14,7 @@ Claude Code, ChatGPT 같은 코딩 에이전트로 작업하다 보면 여러 �
 ## 기술 스택
 
 - **Electron** + **React** + **Vite** (TypeScript)
-- diff 렌더링: `@git-diff-view/react`, 문법 강조: Shiki
+- diff 렌더링: `@pierre/diffs` (문법 강조 Shiki 내장)
 - Git 접근: 메인 프로세스에서 `git` CLI 실행 후 출력 파싱
 - 린트/포맷: oxlint + oxfmt
 

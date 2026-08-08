@@ -1,48 +1,10 @@
-import { DiffModeEnum, DiffView } from "@git-diff-view/react";
-import { getDiffViewHighlighter } from "@git-diff-view/shiki";
-import { type JSX, useEffect, useMemo, useState } from "react";
+import type { FileDiffOptions } from "@pierre/diffs";
+import { PatchDiff } from "@pierre/diffs/react";
+import { type JSX, useMemo, useState } from "react";
 import { splitPath } from "../lib/format";
-import { inferLang } from "../lib/lang";
 import { countHunkLines, type FileDiff, parseUnifiedDiff } from "../lib/parseDiff";
 
-type Highlighter = Awaited<ReturnType<typeof getDiffViewHighlighter>>;
-
-let highlighterPromise: Promise<Highlighter> | null = null;
-
-function useHighlighter(): Highlighter | null {
-  const [highlighter, setHighlighter] = useState<Highlighter | null>(null);
-
-  useEffect(() => {
-    highlighterPromise ??= getDiffViewHighlighter();
-    let cancelled = false;
-    highlighterPromise.then(
-      (h) => {
-        if (!cancelled) setHighlighter(h);
-      },
-      () => {
-        // Shiki 초기화 실패 시 강조 없이 렌더링한다.
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return highlighter;
-}
-
-function useDarkMode(): boolean {
-  const [dark, setDark] = useState(() => matchMedia("(prefers-color-scheme: dark)").matches);
-
-  useEffect(() => {
-    const query = matchMedia("(prefers-color-scheme: dark)");
-    const onChange = (event: MediaQueryListEvent): void => setDark(event.matches);
-    query.addEventListener("change", onChange);
-    return () => query.removeEventListener("change", onChange);
-  }, []);
-
-  return dark;
-}
+type DiffStyle = "unified" | "split";
 
 function fileLabel(file: FileDiff): string {
   if (file.isRename && file.oldPath && file.newPath) return `${file.oldPath} → ${file.newPath}`;
@@ -93,9 +55,14 @@ export function DiffPane({
   emptyMessage: string;
 }): JSX.Element {
   const files = useMemo(() => parseUnifiedDiff(diff), [diff]);
-  const [mode, setMode] = useState<DiffModeEnum>(DiffModeEnum.Unified);
-  const highlighter = useHighlighter();
-  const dark = useDarkMode();
+  const [diffStyle, setDiffStyle] = useState<DiffStyle>("unified");
+
+  // themeType은 기본값 "system"이라 OS 다크 모드를 라이브러리가 직접 따라간다.
+  // 파일 헤더는 앱이 직접 그리므로 라이브러리 헤더는 끈다.
+  const options = useMemo<FileDiffOptions<undefined>>(
+    () => ({ diffStyle, disableFileHeader: true }),
+    [diffStyle],
+  );
 
   if (files.length === 0) {
     return <div className="diff-pane empty">{emptyMessage}</div>;
@@ -108,15 +75,15 @@ export function DiffPane({
         <div className="segmented">
           <button
             type="button"
-            className={mode === DiffModeEnum.Unified ? "active" : ""}
-            onClick={() => setMode(DiffModeEnum.Unified)}
+            className={diffStyle === "unified" ? "active" : ""}
+            onClick={() => setDiffStyle("unified")}
           >
             Unified
           </button>
           <button
             type="button"
-            className={mode === DiffModeEnum.Split ? "active" : ""}
-            onClick={() => setMode(DiffModeEnum.Split)}
+            className={diffStyle === "split" ? "active" : ""}
+            onClick={() => setDiffStyle("split")}
           >
             Split
           </button>
@@ -139,18 +106,7 @@ export function DiffPane({
               ) : file.hunks === "" ? (
                 <div className="diff-file-note">내용 변경 없음 (모드/메타데이터만 변경)</div>
               ) : (
-                <DiffView
-                  data={{
-                    oldFile: { fileName: file.oldPath, fileLang: inferLang(file.oldPath) },
-                    newFile: { fileName: file.newPath, fileLang: inferLang(file.newPath) },
-                    hunks: [file.raw],
-                  }}
-                  diffViewMode={mode}
-                  diffViewTheme={dark ? "dark" : "light"}
-                  diffViewHighlight={highlighter !== null}
-                  registerHighlighter={highlighter ?? undefined}
-                  diffViewFontSize={12}
-                />
+                <PatchDiff patch={file.raw} options={options} />
               )}
             </section>
           );
