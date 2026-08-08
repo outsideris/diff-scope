@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countHunkLines, parseUnifiedDiff } from "./parseDiff";
+import { countHunkLines, estimateHunkRows, parseUnifiedDiff } from "./parseDiff";
 
 const MODIFIED = `diff --git a/src/app.ts b/src/app.ts
 index e69de29..d95f3ad 100644
@@ -137,5 +137,41 @@ describe("countHunkLines", () => {
 
     expect(countHunkLines(file.hunks)).toEqual({ added: 2, deleted: 1 });
     expect(countHunkLines("")).toEqual({ added: 0, deleted: 0 });
+  });
+});
+
+describe("estimateHunkRows", () => {
+  it("counts context, added and deleted lines as rows and each @@ as a separator", () => {
+    const [file] = parseUnifiedDiff(MODIFIED);
+
+    // 컨텍스트 1 + 삭제 1 + 추가 2, `@@` 하나
+    expect(estimateHunkRows(file.hunks)).toEqual({ lines: 4, separators: 1 });
+  });
+
+  it("counts one separator per hunk", () => {
+    const twoHunks = `@@ -1,2 +1,2 @@
+ a
+-b
++c
+@@ -10,2 +10,2 @@
+ d
+-e
++f`;
+
+    expect(estimateHunkRows(twoHunks)).toEqual({ lines: 6, separators: 2 });
+  });
+
+  it("ignores the no-newline marker and blank trailing lines", () => {
+    const noNewline = `@@ -1 +1 @@
+-a
++b
+\\ No newline at end of file
+`;
+
+    expect(estimateHunkRows(noNewline)).toEqual({ lines: 2, separators: 1 });
+  });
+
+  it("returns zero rows for empty hunk text", () => {
+    expect(estimateHunkRows("")).toEqual({ lines: 0, separators: 0 });
   });
 });

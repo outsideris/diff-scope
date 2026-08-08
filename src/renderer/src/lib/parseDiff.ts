@@ -31,6 +31,33 @@ export function countHunkLines(hunks: string): HunkLineCount {
   return { added, deleted };
 }
 
+export interface HunkRowCount {
+  /** 코드 행 수 (컨텍스트 + 추가 + 삭제) */
+  lines: number;
+  /** hunk 사이 구분자 수 (`@@` 헤더 하나당 하나) */
+  separators: number;
+}
+
+/**
+ * hunk 원문이 몇 행으로 렌더링될지 어림한다. 지연 마운트 자리표시자의 높이 계산용이다.
+ *
+ * split 모드는 실제 행 수가 이보다 적지만(추가/삭제가 같은 행에 놓인다) 자리표시자 용도라
+ * unified 기준으로 넉넉하게 잡는다.
+ */
+export function estimateHunkRows(hunks: string): HunkRowCount {
+  let lines = 0;
+  let separators = 0;
+  if (hunks) {
+    for (const line of hunks.split("\n")) {
+      if (line.startsWith("@@")) separators++;
+      else if (line.startsWith("\\"))
+        continue; // "\ No newline at end of file"
+      else if (line !== "") lines++;
+    }
+  }
+  return { lines, separators };
+}
+
 /** git diff 원문(여러 파일)을 `diff --git` 섹션 단위로 쪼갠다. */
 export function parseUnifiedDiff(raw: string): FileDiff[] {
   const lines = raw.split("\n");

@@ -1,11 +1,72 @@
 import type { FileDiffLoadedFiles, FileDiffMetadata, FileDiffOptions } from "@pierre/diffs";
 import { PatchDiff } from "@pierre/diffs/react";
-import { type JSX, useMemo, useState } from "react";
+import { type JSX, useEffect, useMemo, useRef, useState } from "react";
 import type { DiffRevisions } from "../../../shared/git";
 import { splitPath } from "../lib/format";
-import { countHunkLines, type FileDiff, parseUnifiedDiff } from "../lib/parseDiff";
+import {
+  countHunkLines,
+  estimateHunkRows,
+  type FileDiff,
+  parseUnifiedDiff,
+} from "../lib/parseDiff";
 
 type DiffStyle = "unified" | "split";
+
+/** styles.css의 `--diffs-line-height`와 맞춘다. 자리표시자 높이 계산용. */
+const ROW_HEIGHT = 18;
+/** hunk 구분자 한 줄의 대략적인 높이 */
+const SEPARATOR_HEIGHT = 32;
+/** 뷰포트에서 이만큼 떨어진 파일까지 미리 마운트한다 */
+const PRELOAD_MARGIN = "800px";
+
+/**
+ * 화면(스크롤 컨테이너) 근처에 올 때까지 diff 본문 마운트를 미룬다.
+ *
+ * 커밋 하나에 파일이 수십 개면 전부 마운트하는 비용이 크다. 파일 내부 줄 수보다
+ * DOM 총량이 병목이라 파일 단위로 늦추는 것만으로 충분히 효과가 있다.
+ * 한 번 보이면 계속 마운트해 둔다 — 다시 접으면 스크롤 위치가 튄다.
+ */
+function LazyDiffBody({
+  patch,
+  options,
+  placeholderHeight,
+  root,
+}: {
+  patch: string;
+  options: FileDiffOptions<undefined>;
+  placeholderHeight: number;
+  root: Element | null;
+}): JSX.Element {
+  const ref = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (mounted) return;
+    const element = ref.current;
+    if (!element) return;
+
+    // IntersectionObserver가 없는 환경(테스트 등)에서는 그냥 바로 마운트한다.
+    if (typeof IntersectionObserver === "undefined") {
+      setMounted(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) setMounted(true);
+      },
+      { root, rootMargin: PRELOAD_MARGIN },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [mounted, root]);
+
+  return (
+    <div ref={ref} style={mounted ? undefined : { height: placeholderHeight }}>
+      {mounted && <PatchDiff patch={patch} options={options} />}
+    </div>
+  );
+}
 
 /**
  * 컨텍스트 확장용 원본을 메인 프로세스에서 가져온다.
@@ -66,6 +127,12 @@ function HunkDelta({ file }: { file: FileDiff }): JSX.Element | null {
   );
 }
 
+/** 아직 마운트하지 않은 파일이 차지할 자리 높이 */
+function placeholderHeight(file: FileDiff): number {
+  const { lines, separators } = estimateHunkRows(file.hunks);
+  return lines * ROW_HEIGHT + separators * SEPARATOR_HEIGHT;
+}
+
 function fileBadge(file: FileDiff): string | null {
   if (file.isNew) return "new";
   if (file.isDeleted) return "deleted";
@@ -88,6 +155,8 @@ export function DiffPane({
 }): JSX.Element {
   const files = useMemo(() => parseUnifiedDiff(diff), [diff]);
   const [diffStyle, setDiffStyle] = useState<DiffStyle>("unified");
+  // 지연 마운트 판정의 기준이 되는 스크롤 컨테이너
+  const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
 
   // themeType은 기본값 "system"이라 OS 다크 모드를 라이브러리가 직접 따라간다.
   // 파일 헤더는 앱이 직접 그리므로 라이브러리 헤더는 끈다.
@@ -125,7 +194,7 @@ export function DiffPane({
           </button>
         </div>
       </div>
-      <div className="diff-files">
+      <div className="diff-files" ref={setScrollRoot}>
         {files.map((file) => {
           const label = fileLabel(file);
           const badge = fileBadge(file);
@@ -142,7 +211,12 @@ export function DiffPane({
               ) : file.hunks === "" ? (
                 <div className="diff-file-note">내용 변경 없음 (모드/메타데이터만 변경)</div>
               ) : (
-                <PatchDiff patch={file.raw} options={options} />
+                <LazyDiffBody
+                  patch={file.raw}
+                  options={options}
+                  placeholderHeight={placeholderHeight(file)}
+                  root={scrollRoot}
+                />
               )}
             </section>
           );
