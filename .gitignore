@@ -4,3 +4,6 @@ out/
 release/
 .DS_Store
 *.log
+
+# Claude Code 개인 설정 (권한 규칙 등)
+.claude/settings.local.json
