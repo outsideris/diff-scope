@@ -23,6 +23,20 @@ const PRELOAD_MARGIN = "800px";
 const SCROLLER_SELECTOR = ".diff-files";
 
 /**
+ * diff 표면 배경을 앱 카드(`--panel`)에 맞춘다.
+ *
+ * 폰트·크기 같은 `--diffs-*` 변수는 `:root`에 두면 shadow 경계를 넘어 상속되지만,
+ * `--diffs-bg` 계열은 라이브러리가 `:host`에 직접 선언해서 상속이 이기지 못한다.
+ * (다크 모드에서 카드는 #26272d인데 diff 표면만 #0a0a0a로 떠 보였다.)
+ * `unsafeCSS`는 테마보다 뒤 레이어에 들어가므로 여기서만 덮는다.
+ */
+const DIFF_SURFACE_CSS = `
+  :host {
+    --diffs-bg: var(--panel);
+  }
+`;
+
+/**
  * 가상화가 아직 그리지 않은 줄의 높이를 어림하는 값. 실제 CSS와 맞춰야 스크롤이 덜 튄다.
  * 파일 헤더는 앱이 카드 바깥에 그리므로 라이브러리 쪽 헤더 높이는 0이다.
  */
@@ -176,6 +190,7 @@ export function DiffPane({
     () => ({
       diffStyle,
       disableFileHeader: true,
+      unsafeCSS: DIFF_SURFACE_CSS,
       loadDiffFiles: createFileLoader(dir, revisions),
     }),
     [diffStyle, dir, revisions],

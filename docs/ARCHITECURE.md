@@ -61,7 +61,7 @@ src/renderer/src/lib/        # 순수 로직: parseDiff(diff 섹션 분할), sta
 - **HistoryView**: `getLog` 커밋 목록, 선택 시 `getCommitDiff`.
 - **DiffPane**: diff 원문을 `lib/parseDiff.ts`로 파일 섹션 단위로 쪼개, 각 섹션의 원문(`file.raw`)을 `@pierre/diffs`의 `<PatchDiff patch={...}>`에 넘겨 렌더링한다. unified/split 전환은 `options.diffStyle`.
 - **주의**: `PatchDiff`는 내부적으로 `getSingularPatch()`를 써서 patch 하나에서 **파일 하나**를 렌더링한다. 여러 파일은 앱이 쪼개서 컴포넌트를 여러 개 마운트한다.
-- **주의**: `@pierre/diffs`는 **shadow DOM**(`<diffs-container>`) 안에 렌더링한다. 페이지 CSS 셀렉터는 내부에 닿지 않고, `--diffs-*` 커스텀 프로퍼티만 상속으로 넘어간다. 폰트·크기·행간은 `styles.css`의 `:root`에서 지정한다.
+- **주의**: `@pierre/diffs`는 **shadow DOM**(`<diffs-container>`) 안에 렌더링한다. 페이지 CSS 셀렉터는 내부에 닿지 않고, `--diffs-*` 커스텀 프로퍼티만 상속으로 넘어간다. 폰트·크기·행간은 `styles.css`의 `:root`에서 지정한다. 단 **라이브러리가 `:host`에 직접 선언하는 변수(`--diffs-bg` 계열)는 `:root` 상속으로 못 덮는다** — 이런 값은 `options.unsafeCSS`로 `:host`에 다시 선언한다(`DiffPane`의 `DIFF_SURFACE_CSS`).
 - **주의**: 파일 헤더는 앱이 직접 그리므로 `options.disableFileHeader: true`로 라이브러리 헤더를 끈다. 바이너리 파일은 pierre에 개념이 없어 앱이 `isBinary`로 먼저 걸러낸다.
 - **가상화**: 파일 목록을 `<Virtualizer>`로 감싼다. 이 컨텍스트 안에서는 각 `PatchDiff`가 `VirtualizedFileDiff`로 승격돼(`useFileDiffInstance`가 `useVirtualizer()` 값으로 분기) 화면에 보이는 줄만 그린다. 바깥 div(`.diff-files`)가 스크롤 컨테이너, 안쪽 div(`.diff-files-content`)가 카드 목록이라 패딩·gap은 안쪽에 둔다. `metrics`로 실제 행 높이(18px)와 헤더 높이(0 — 헤더는 앱이 그린다)를 알려줘야 스크롤이 덜 튄다.
 - **지연 마운트**: 파일 섹션 본문은 `LazyDiffBody`가 IntersectionObserver로 스크롤 컨테이너(`.diff-files`) 근처에 올 때까지 마운트를 미룬다. 자리표시자 높이는 `estimateHunkRows()`로 어림한다. 한 번 보이면 계속 마운트해 둔다(다시 접으면 스크롤이 튄다). **주의**: 창이 가려져 `document.visibilityState`가 `hidden`이면 브라우저가 IntersectionObserver 전달을 멈춘다 — 창을 앞으로 가져오면 그때 마운트된다.
