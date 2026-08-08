@@ -63,6 +63,7 @@ src/renderer/src/lib/        # 순수 로직: parseDiff(diff 섹션 분할), sta
 - **주의**: `PatchDiff`는 내부적으로 `getSingularPatch()`를 써서 patch 하나에서 **파일 하나**를 렌더링한다. 여러 파일은 앱이 쪼개서 컴포넌트를 여러 개 마운트한다.
 - **주의**: `@pierre/diffs`는 **shadow DOM**(`<diffs-container>`) 안에 렌더링한다. 페이지 CSS 셀렉터는 내부에 닿지 않고, `--diffs-*` 커스텀 프로퍼티만 상속으로 넘어간다. 폰트·크기·행간은 `styles.css`의 `:root`에서 지정한다.
 - **주의**: 파일 헤더는 앱이 직접 그리므로 `options.disableFileHeader: true`로 라이브러리 헤더를 끈다. 바이너리 파일은 pierre에 개념이 없어 앱이 `isBinary`로 먼저 걸러낸다.
+- **가상화**: 파일 목록을 `<Virtualizer>`로 감싼다. 이 컨텍스트 안에서는 각 `PatchDiff`가 `VirtualizedFileDiff`로 승격돼(`useFileDiffInstance`가 `useVirtualizer()` 값으로 분기) 화면에 보이는 줄만 그린다. 바깥 div(`.diff-files`)가 스크롤 컨테이너, 안쪽 div(`.diff-files-content`)가 카드 목록이라 패딩·gap은 안쪽에 둔다. `metrics`로 실제 행 높이(18px)와 헤더 높이(0 — 헤더는 앱이 그린다)를 알려줘야 스크롤이 덜 튄다.
 - **지연 마운트**: 파일 섹션 본문은 `LazyDiffBody`가 IntersectionObserver로 스크롤 컨테이너(`.diff-files`) 근처에 올 때까지 마운트를 미룬다. 자리표시자 높이는 `estimateHunkRows()`로 어림한다. 한 번 보이면 계속 마운트해 둔다(다시 접으면 스크롤이 튄다). **주의**: 창이 가려져 `document.visibilityState`가 `hidden`이면 브라우저가 IntersectionObserver 전달을 멈춘다 — 창을 앞으로 가져오면 그때 마운트된다.
 - **컨텍스트 확장**: patch만으로 만든 diff는 `isPartial`이라 patch에 담긴 줄 밖으로 확장할 수 없다. `options.loadDiffFiles`를 넘기면 라이브러리가 확장 버튼을 노출하고, 사용자가 눌렀을 때만 원본을 요청한다. 로더는 `getFileContents` IPC로 두 리비전의 전문을 가져온다 — 어느 리비전인지는 `DiffPane`의 `revisions` prop(`DiffRevisions`)으로 받는다(unstaged는 `:0`→워킹 트리, staged는 `HEAD`→`:0`, 커밋은 `<hash>^`→`<hash>`).
 

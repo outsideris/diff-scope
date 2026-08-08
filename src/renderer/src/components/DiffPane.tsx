@@ -1,5 +1,6 @@
 import type { FileDiffLoadedFiles, FileDiffMetadata, FileDiffOptions } from "@pierre/diffs";
-import { PatchDiff } from "@pierre/diffs/react";
+import type { VirtualFileMetrics } from "@pierre/diffs";
+import { PatchDiff, Virtualizer } from "@pierre/diffs/react";
 import { type JSX, useEffect, useMemo, useRef, useState } from "react";
 import type { DiffRevisions } from "../../../shared/git";
 import { splitPath } from "../lib/format";
@@ -18,6 +19,19 @@ const ROW_HEIGHT = 18;
 const SEPARATOR_HEIGHT = 32;
 /** 뷰포트에서 이만큼 떨어진 파일까지 미리 마운트한다 */
 const PRELOAD_MARGIN = "800px";
+/** 지연 마운트 판정의 기준이 되는 스크롤 컨테이너 */
+const SCROLLER_SELECTOR = ".diff-files";
+
+/**
+ * 가상화가 아직 그리지 않은 줄의 높이를 어림하는 값. 실제 CSS와 맞춰야 스크롤이 덜 튄다.
+ * 파일 헤더는 앱이 카드 바깥에 그리므로 라이브러리 쪽 헤더 높이는 0이다.
+ */
+const VIRTUAL_METRICS: VirtualFileMetrics = {
+  hunkLineCount: 50,
+  lineHeight: ROW_HEIGHT,
+  diffHeaderHeight: 0,
+  spacing: 8,
+};
 
 /**
  * 화면(스크롤 컨테이너) 근처에 올 때까지 diff 본문 마운트를 미룬다.
@@ -30,12 +44,10 @@ function LazyDiffBody({
   patch,
   options,
   placeholderHeight,
-  root,
 }: {
   patch: string;
   options: FileDiffOptions<undefined>;
   placeholderHeight: number;
-  root: Element | null;
 }): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -51,19 +63,21 @@ function LazyDiffBody({
       return;
     }
 
+    // 스크롤 컨테이너는 Virtualizer가 만든 바깥 div다. ref 접근 순서에 기대지 않도록
+    // 자리표시자에서 거슬러 올라가 찾는다.
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) setMounted(true);
       },
-      { root, rootMargin: PRELOAD_MARGIN },
+      { root: element.closest(SCROLLER_SELECTOR), rootMargin: PRELOAD_MARGIN },
     );
     observer.observe(element);
     return () => observer.disconnect();
-  }, [mounted, root]);
+  }, [mounted]);
 
   return (
     <div ref={ref} style={mounted ? undefined : { height: placeholderHeight }}>
-      {mounted && <PatchDiff patch={patch} options={options} />}
+      {mounted && <PatchDiff patch={patch} options={options} metrics={VIRTUAL_METRICS} />}
     </div>
   );
 }
@@ -155,8 +169,6 @@ export function DiffPane({
 }): JSX.Element {
   const files = useMemo(() => parseUnifiedDiff(diff), [diff]);
   const [diffStyle, setDiffStyle] = useState<DiffStyle>("unified");
-  // 지연 마운트 판정의 기준이 되는 스크롤 컨테이너
-  const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
 
   // themeType은 기본값 "system"이라 OS 다크 모드를 라이브러리가 직접 따라간다.
   // 파일 헤더는 앱이 직접 그리므로 라이브러리 헤더는 끈다.
@@ -194,7 +206,9 @@ export function DiffPane({
           </button>
         </div>
       </div>
-      <div className="diff-files" ref={setScrollRoot}>
+      {/* Virtualizer 안에서는 각 PatchDiff가 VirtualizedFileDiff로 승격돼 보이는 줄만 그린다.
+          바깥 div가 스크롤 컨테이너, 안쪽 div가 실제 목록이다. */}
+      <Virtualizer className="diff-files" contentClassName="diff-files-content">
         {files.map((file) => {
           const label = fileLabel(file);
           const badge = fileBadge(file);
@@ -215,13 +229,12 @@ export function DiffPane({
                   patch={file.raw}
                   options={options}
                   placeholderHeight={placeholderHeight(file)}
-                  root={scrollRoot}
                 />
               )}
             </section>
           );
         })}
-      </div>
+      </Virtualizer>
     </div>
   );
 }

@@ -827,9 +827,15 @@ code {
   font-size: 12px;
 }
 
+/* Virtualizer가 만드는 바깥 div — 스크롤 컨테이너이자 가상화 기준 뷰포트 */
 .diff-files {
   flex: 1;
+  min-height: 0;
   overflow: auto;
+}
+
+/* Virtualizer 안쪽 div — 실제 파일 카드 목록 */
+.diff-files-content {
   padding: 0 18px 24px;
   display: flex;
   flex-direction: column;
