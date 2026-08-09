@@ -56,3 +56,7 @@ npm run format:check  # 포맷 검사 (oxfmt)
 ```
 
 커밋 전 확인 항목은 [docs/QUALITY_GATE.md](docs/QUALITY_GATE.md) 참고.
+
+## 라이선스
+
+MIT — [LICENSE](LICENSE) 참고.

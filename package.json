@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Personal macOS diff viewer for git working trees, worktrees, and history",
+  "license": "MIT",
   "author": "Outsider <outsideris@gmail.com>",
   "main": "./out/main/index.js",
   "scripts": {
