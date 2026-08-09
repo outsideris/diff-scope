@@ -1,6 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { FileCache } from "./cache";
 import { normalizePath } from "./encode";
 
 export interface ClaudeMeta {
@@ -57,20 +58,22 @@ export function parseClaudeMeta(raw: string): ClaudeMeta | null {
  * 데스크톱 세션 저장소를 훑어 cwd가 `cwds` 집합에 속하는 메타만 반환한다.
  * 저장소는 `<store>/<workspace>/<project>/local_*.json` 2단계 구조다.
  */
+// cwd 필터와 무관하게 파싱 결과를 캐시해, 워크트리 목록이 바뀌어도 캐시가 유효하다.
+const metaCache = new FileCache<ClaudeMeta | null>();
+
 export async function readClaudeStore(
   cwds: Set<string>,
   dir = claudeStoreDir(),
 ): Promise<ClaudeMeta[]> {
+  const files = await walkLocalFiles(dir);
   const metas: ClaudeMeta[] = [];
-  for (const file of await walkLocalFiles(dir)) {
-    let meta: ClaudeMeta | null;
-    try {
-      meta = parseClaudeMeta(await readFile(file, "utf8"));
-    } catch {
-      continue;
-    }
+  for (const file of files) {
+    const meta = await metaCache.read(file, async () =>
+      parseClaudeMeta(await readFile(file, "utf8")),
+    );
     if (meta && cwds.has(meta.cwd)) metas.push(meta);
   }
+  metaCache.retain(files);
   return metas;
 }
 

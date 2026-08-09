@@ -11,8 +11,8 @@ type ViewKind = "working" | "history";
 
 const SIDEBAR_COLLAPSED_KEY = "diff-scope:sidebar-collapsed";
 const SHOW_ARCHIVED_KEY = "diff-scope:show-archived-sessions";
-/** 사이드바(워크트리·dirty 배지·세션) 자동 갱신 주기 */
-const SIDEBAR_POLL_MS = 30_000;
+/** 사이드바 갱신은 fs 감시 푸시가 담당하고, 폴링은 유실 보정용 안전망이다 */
+const SIDEBAR_POLL_MS = 120_000;
 
 export function App(): JSX.Element {
   const [repos, setRepos] = useState<RepositoryEntry[]>([]);
@@ -73,6 +73,13 @@ export function App(): JSX.Element {
     } catch {
       setSessionsByDir({});
     }
+
+    // 메인 프로세스의 fs 감시 대상을 현재 워크트리 목록과 동기화한다.
+    try {
+      await window.diffScope.syncWatchedWorktrees(dirs);
+    } catch {
+      // 감시 실패는 안전망 폴링이 보정한다.
+    }
   }, []);
 
   const refreshRepos = useCallback(
@@ -97,21 +104,48 @@ export function App(): JSX.Element {
     });
   }, [refreshRepos]);
 
-  // 사이드바(워크트리·dirty 배지·세션 상태)를 주기적으로 다시 스캔한다.
-  // 창이 보이지 않는 동안은 건너뛰고, 이전 갱신이 끝나지 않았으면 겹치지 않는다.
-  const polling = useRef(false);
-  useEffect(() => {
-    const id = setInterval(async () => {
-      if (document.hidden || polling.current) return;
-      polling.current = true;
-      try {
+  // 백그라운드 갱신: 겹치지 않게 실행하고, 실행 중 들어온 요청은 끝난 뒤 한 번 더 수행한다.
+  const refreshing = useRef(false);
+  const pendingRefresh = useRef(false);
+  const backgroundRefresh = useCallback(async () => {
+    if (refreshing.current) {
+      pendingRefresh.current = true;
+      return;
+    }
+    refreshing.current = true;
+    try {
+      do {
+        pendingRefresh.current = false;
         await refreshRepos();
-      } finally {
-        polling.current = false;
-      }
+      } while (pendingRefresh.current);
+    } finally {
+      refreshing.current = false;
+    }
+  }, [refreshRepos]);
+
+  // 1) fs 감시 푸시 — 변경이 있을 때만 즉시 갱신 (메인 프로세스에서 디바운스됨)
+  useEffect(() => {
+    return window.diffScope.onSidebarChanged(() => {
+      if (!document.hidden) void backgroundRefresh();
+    });
+  }, [backgroundRefresh]);
+
+  // 2) 창이 다시 보이면 숨김 동안 놓친 변경을 한 번에 따라잡는다.
+  useEffect(() => {
+    const onVisible = (): void => {
+      if (!document.hidden) void backgroundRefresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [backgroundRefresh]);
+
+  // 3) 안전망 폴링 — 감시 이벤트 유실이나 lsof TTL 지연을 보정한다.
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (!document.hidden) void backgroundRefresh();
     }, SIDEBAR_POLL_MS);
     return () => clearInterval(id);
-  }, [refreshRepos]);
+  }, [backgroundRefresh]);
 
   const addRepository = useCallback(async () => {
     try {

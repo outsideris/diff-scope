@@ -12,6 +12,10 @@ export const IpcChannels = {
   getCommitDiff: "diff-scope:git:commit-diff",
   getFileContents: "diff-scope:git:file-contents",
   getSessions: "diff-scope:sessions:list",
+  syncWatchedWorktrees: "diff-scope:watch:sync",
 } as const;
 
 export type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels];
+
+/** 메인 → 렌더러 푸시 이벤트: 감시 중인 파일이 바뀌어 사이드바 갱신이 필요함 */
+export const SidebarChangedEvent = "diff-scope:sidebar-changed";

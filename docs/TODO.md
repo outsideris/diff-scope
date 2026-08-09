@@ -37,10 +37,19 @@
 - [x] `getSessions(worktreePaths)` IPC
 - [x] 사이드바 세션 목록 UI (앱 아이콘, 상태, 제목, 시간, 아카이브 토글)
 
+## Phase 6: 갱신 비용 절감 + fs 감시 푸시 — [계획](plan/phase-6-auto-refresh.md) ✅
+
+- [x] mtime 캐시 (`FileCache`) — Codex 롤아웃 head·session_index, Claude 데스크톱 메타, CLI 전사 제목 파싱 재사용
+- [x] lsof TTL 캐시 (`TtlCache`, 45초) — 대상 파일 목록이 바뀌면 즉시 재실행
+- [x] fs 감시 (`SidebarWatcher`) — 세션 소스 4곳 + 등록된 워크트리, 디바운스 500ms/최소 간격 3초
+- [x] 메인 → 렌더러 푸시 (`diff-scope:sidebar-changed`) + 워크트리 감시 목록 동기화 IPC
+- [x] 폴링을 120초 안전망으로 완화, 창 복귀 시 즉시 1회 갱신
+
 ## Phase 4 후보 (미정)
 
-- [x] 사이드바 자동 새로고침 — 30초 주기 폴링 (2026-07-19). fs 감시 기반 즉시 갱신·창 포커스 갱신은 후속 후보
+- [x] 사이드바 자동 새로고침 — 30초 주기 폴링 (2026-07-19). Phase 6에서 fs 감시 푸시로 전환하고 폴링은 120초 안전망으로 완화
 - [x] 대용량 diff 렌더링 성능 (2026-08-08) — 파일 단위 지연 마운트(26파일 커밋에서 3개만 마운트) + `@pierre/diffs`의 `<Virtualizer>`로 줄 단위 가상화(3,770줄 파일에서 약 200행만 렌더)
+- [ ] Working 뷰 파일 목록도 fs 감시 푸시에 반응시키기 — Phase 6는 사이드바만 갱신해서, 파일을 만들면 사이드바 dirty 배지는 바로 늘지만 중앙 CHANGES 목록은 ⟳를 눌러야 반영된다 (`WorkingView`의 `useAsync`가 별도 경로)
 - [ ] 브랜치/태그 선택 후 히스토리 조회, 커밋 범위 비교
 - [x] dmg 패키징 (electron-builder) — 2026-07-19 완료, `npm run package`
 

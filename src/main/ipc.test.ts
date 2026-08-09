@@ -39,6 +39,8 @@ const store = {
   remove: vi.fn(),
 } as unknown as RepositoryStore & { list: ReturnType<typeof vi.fn>; add: ReturnType<typeof vi.fn> };
 
+const watcher = { syncWorktrees: vi.fn() };
+
 type Handler = (event: unknown, ...args: unknown[]) => unknown;
 
 function handlerFor(channel: string): Handler {
@@ -49,7 +51,7 @@ function handlerFor(channel: string): Handler {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  registerIpcHandlers(store);
+  registerIpcHandlers(store, watcher);
 });
 
 describe("registerIpcHandlers", () => {
@@ -108,5 +110,8 @@ describe("registerIpcHandlers", () => {
 
     await handlerFor(IpcChannels.getSessions)(null, ["/repos/a", "/repos/a/wt"]);
     expect(git.collectSessions).toHaveBeenCalledWith(["/repos/a", "/repos/a/wt"]);
+
+    await handlerFor(IpcChannels.syncWatchedWorktrees)(null, ["/repos/a", "/repos/a/wt"]);
+    expect(watcher.syncWorktrees).toHaveBeenCalledWith(["/repos/a", "/repos/a/wt"]);
   });
 });

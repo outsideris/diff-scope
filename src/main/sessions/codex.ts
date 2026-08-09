@@ -2,9 +2,19 @@ import { execFile } from "node:child_process";
 import { readdir, readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { FileCache, TtlCache } from "./cache";
 import { normalizePath } from "./encode";
 
 const HEAD_BYTES = 128 * 1024;
+const LSOF_TTL_MS = 45_000;
+
+type CodexHead = Omit<CodexSession, "filePath" | "archived"> | null;
+
+// 반복 스캔 비용 절감: rollout head와 session_index는 파일이 바뀌지 않으면 재파싱하지 않고,
+// lsof는 대상 목록이 같으면 TTL 안에 다시 실행하지 않는다 (docs/plan/phase-6-auto-refresh.md).
+const headCache = new FileCache<CodexHead>();
+const indexCache = new FileCache<Map<string, CodexIndexEntry>>();
+const openRolloutsCache = new TtlCache<Set<string>>(LSOF_TTL_MS);
 
 export interface CodexSession {
   id: string;
@@ -110,6 +120,11 @@ export function parseLsofOpenPaths(output: string): Set<string> {
  */
 export function findOpenRollouts(paths: string[]): Promise<Set<string>> {
   if (paths.length === 0) return Promise.resolve(new Set());
+  // 대상 목록이 같으면 TTL 안에는 재실행하지 않는다. 목록이 바뀌면(새 rollout 등장 등) 즉시 재실행.
+  return openRolloutsCache.get(paths.join("\n"), () => runLsof(paths));
+}
+
+function runLsof(paths: string[]): Promise<Set<string>> {
   return new Promise((resolve) => {
     // 일부 파일만 열려 있으면 lsof가 exit 1을 반환하므로 stdout만 본다.
     execFile("lsof", ["-Fn", "--", ...paths], { maxBuffer: 4 * 1024 * 1024 }, (_error, stdout) => {
@@ -172,13 +187,10 @@ export async function readCodexSessions(
 
   const sessions: CodexSession[] = [];
   for (const file of files) {
-    let head: Omit<CodexSession, "filePath" | "archived"> | null;
-    try {
+    const head = await headCache.read(file.path, async () => {
       const buffer = await readFile(file.path);
-      head = parseCodexHead(buffer.subarray(0, HEAD_BYTES).toString("utf8"));
-    } catch {
-      continue;
-    }
+      return parseCodexHead(buffer.subarray(0, HEAD_BYTES).toString("utf8"));
+    });
     if (!head || !cwds.has(head.cwd)) continue;
 
     const indexed = index.get(head.id);
@@ -190,15 +202,16 @@ export async function readCodexSessions(
       archived: file.archived,
     });
   }
+  headCache.retain(files.map((file) => file.path));
   return sessions;
 }
 
 async function readSessionIndex(baseDir: string): Promise<Map<string, CodexIndexEntry>> {
-  try {
-    return parseSessionIndex(await readFile(join(baseDir, "session_index.jsonl"), "utf8"));
-  } catch {
-    return new Map();
-  }
+  const path = join(baseDir, "session_index.jsonl");
+  const index = await indexCache.read(path, async () =>
+    parseSessionIndex(await readFile(path, "utf8")),
+  );
+  return index ?? new Map();
 }
 
 /** `<dir>/YYYY/MM/DD/rollout-*.jsonl`을 모두 찾는다. */

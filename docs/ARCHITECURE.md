@@ -38,13 +38,15 @@ Electron 앱. 아직 스캐폴딩 전이며, 아래는 결정된 구조 방향�
 src/shared/ipc.ts            # IPC 채널 상수 (main/preload 공유)
 src/shared/git.ts            # 렌더러와 공유하는 타입 (RepoStatus, Worktree, CommitInfo, ...)
 src/main/index.ts            # 앱 생명주기, 창 생성, 스토어/IPC 초기화
-src/main/ipc.ts              # IPC 핸들러 등록 (RepositoryStore 주입)
+src/main/ipc.ts              # IPC 핸들러 등록 (RepositoryStore + SidebarWatcher 주입)
 src/main/git/exec.ts         # git CLI 실행 래퍼 (runGit) + GitError
 src/main/git/status.ts       # status --porcelain=v2 -z 파서
 src/main/git/worktree.ts     # worktree list --porcelain -z 파서
 src/main/git/log.ts          # log 커스텀 구분자 포맷 파서
 src/main/git/diff.ts         # working/staged/untracked/commit diff 원문 조회
 src/main/git/blob.ts         # 특정 리비전의 파일 내용 조회 (diff 컨텍스트 확장용)
+src/main/watcher.ts          # fs 감시(FSEvents) + 디바운스 → 사이드바 변경 푸시
+src/main/sessions/cache.ts   # FileCache(mtime+size) / TtlCache(lsof) — 재스캔 비용 절감
 src/main/git/numstat.ts      # diff --numstat 파서 (파일별 +/− 라인 수)
 src/main/git/repository.ts   # 경로 → 저장소 루트 해석
 src/main/store/repositories.ts  # 저장소 목록 JSON 영속화 (userData/repositories.json)
@@ -77,6 +79,8 @@ src/renderer/src/lib/        # 순수 로직: parseDiff(diff 섹션 분할), sta
    - diff: `git diff`, `git diff --cached`, `git show`
 3. 출력을 파싱해 구조화된 객체로 렌더러에 반환
 4. 렌더러가 diff 텍스트를 파일 단위로 쪼개 `@pierre/diffs`로 렌더링
+
+사이드바 갱신은 반대 방향으로도 흐른다: `SidebarWatcher`가 세션 소스 디렉토리와 등록된 워크트리를 감시하다 변경을 감지하면 디바운스 후 `diff-scope:sidebar-changed`를 모든 창에 푸시하고, 렌더러가 그때 다시 스캔한다. 폴링은 유실 보정용 안전망(120초)으로만 남는다. 설계 근거와 세부 규칙은 [plan/phase-6-auto-refresh.md](plan/phase-6-auto-refresh.md) 참고.
 
 ## 기술적 제약 / 원칙
 

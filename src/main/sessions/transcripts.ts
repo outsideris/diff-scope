@@ -1,6 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { FileCache } from "./cache";
 import { encodeProjectDir } from "./encode";
 
 const HEAD_BYTES = 256 * 1024;
@@ -65,6 +66,10 @@ export async function listTranscriptIds(cwd: string, dir = projectsDir()): Promi
   return entries.filter((e) => e.endsWith(".jsonl")).map((e) => e.slice(0, -".jsonl".length));
 }
 
+// 제목은 첫 사용자 메시지에서 나와 사실상 불변이지만, append로 mtime이 바뀌면
+// 다시 유추한다(결과 동일). 항목 수는 실제 전사 파일 수에 유계라 retain은 생략한다.
+const titleCache = new FileCache<string | null>();
+
 /** 전사 파일 head를 읽어 제목을 유추한다. 없으면 null. */
 export async function readTranscriptTitle(
   cwd: string,
@@ -72,10 +77,8 @@ export async function readTranscriptTitle(
   dir = projectsDir(),
 ): Promise<string | null> {
   const path = join(dir, encodeProjectDir(cwd), `${sessionId}.jsonl`);
-  try {
+  return titleCache.read(path, async () => {
     const buffer = await readFile(path);
     return deriveTitle(buffer.subarray(0, HEAD_BYTES).toString("utf8"));
-  } catch {
-    return null;
-  }
+  });
 }

@@ -9,7 +9,7 @@ import type {
   WorkingDiffOptions,
   Worktree,
 } from "../shared/git";
-import { IpcChannels } from "../shared/ipc";
+import { IpcChannels, SidebarChangedEvent } from "../shared/ipc";
 import type { SessionInfo } from "../shared/session";
 
 const api = {
@@ -39,6 +39,15 @@ const api = {
     ipcRenderer.invoke(IpcChannels.getFileContents, dir, request),
   getSessions: (worktreePaths: string[]): Promise<SessionInfo[]> =>
     ipcRenderer.invoke(IpcChannels.getSessions, worktreePaths),
+  syncWatchedWorktrees: (worktreePaths: string[]): Promise<void> =>
+    ipcRenderer.invoke(IpcChannels.syncWatchedWorktrees, worktreePaths),
+
+  /** 감시 중인 파일 변경 알림 구독. 반환된 함수로 해제한다. */
+  onSidebarChanged: (listener: () => void): (() => void) => {
+    const wrapped = (): void => listener();
+    ipcRenderer.on(SidebarChangedEvent, wrapped);
+    return () => ipcRenderer.removeListener(SidebarChangedEvent, wrapped);
+  },
 };
 
 export type DiffScopeApi = typeof api;

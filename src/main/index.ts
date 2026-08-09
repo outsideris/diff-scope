@@ -2,7 +2,9 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { app, BrowserWindow } from "electron";
 import { registerIpcHandlers } from "./ipc";
+import { SidebarChangedEvent } from "../shared/ipc";
 import { RepositoryStore } from "./store/repositories";
+import { SidebarWatcher } from "./watcher";
 
 function createWindow(): void {
   const window = new BrowserWindow({
@@ -33,7 +35,15 @@ app.whenReady().then(() => {
   }
 
   const store = new RepositoryStore(join(app.getPath("userData"), "repositories.json"));
-  registerIpcHandlers(store);
+  const watcher = new SidebarWatcher(() => {
+    for (const window of BrowserWindow.getAllWindows()) {
+      window.webContents.send(SidebarChangedEvent);
+    }
+  });
+  watcher.start();
+  app.on("before-quit", () => watcher.dispose());
+
+  registerIpcHandlers(store, watcher);
   createWindow();
 
   app.on("activate", () => {

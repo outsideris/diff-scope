@@ -11,8 +11,12 @@ import { getRepoStatus } from "./git/status";
 import { listWorktrees } from "./git/worktree";
 import { collectSessions } from "./sessions/collect";
 import type { RepositoryStore } from "./store/repositories";
+import type { SidebarWatcher } from "./watcher";
 
-export function registerIpcHandlers(store: RepositoryStore): void {
+export function registerIpcHandlers(
+  store: RepositoryStore,
+  watcher: Pick<SidebarWatcher, "syncWorktrees">,
+): void {
   ipcMain.handle(IpcChannels.ping, () => "pong");
 
   ipcMain.handle(IpcChannels.selectDirectory, async () => {
@@ -48,5 +52,9 @@ export function registerIpcHandlers(store: RepositoryStore): void {
 
   ipcMain.handle(IpcChannels.getSessions, (_event, worktreePaths: string[]) =>
     collectSessions(worktreePaths),
+  );
+
+  ipcMain.handle(IpcChannels.syncWatchedWorktrees, (_event, worktreePaths: string[]) =>
+    watcher.syncWorktrees(worktreePaths),
   );
 }
